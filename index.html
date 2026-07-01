@@ -1417,8 +1417,23 @@
   function pickFemaleGermanVoice(){
     if(!cachedVoices.length) return null;
     var german = cachedVoices.filter(function(v){ return v.lang && v.lang.toLowerCase().indexOf('de') === 0; });
-    var femaleHints = ['katja','petra','anna','helena','marlene','vicki','female','frau','google deutsch'];
     var pool = german.length ? german : cachedVoices;
+    // 1. Bevorzugt: neuronale "Online (Natural)"-Stimmen (z. B. Edge/Windows) – klingen deutlich menschlicher.
+    var naturalFemaleHints = ['katja','elke','amala','seraphina','klara'];
+    var natural = pool.find(function(v){
+      var n = v.name.toLowerCase();
+      var isNatural = n.indexOf('natural') > -1 || n.indexOf('online') > -1 || n.indexOf('neural') > -1;
+      var isFemale = naturalFemaleHints.some(function(h){ return n.indexOf(h) > -1; }) || n.indexOf('female') > -1;
+      return isNatural && (isFemale || naturalFemaleHints.length === 0);
+    });
+    if(natural) return natural;
+    var anyNatural = pool.find(function(v){
+      var n = v.name.toLowerCase();
+      return n.indexOf('natural') > -1 || n.indexOf('online') > -1 || n.indexOf('neural') > -1;
+    });
+    if(anyNatural) return anyNatural;
+    // 2. Fallback: normale System-Stimme mit weiblichem Namen.
+    var femaleHints = ['katja','petra','anna','helena','marlene','vicki','female','frau','google deutsch'];
     var match = pool.find(function(v){
       var n = v.name.toLowerCase();
       return femaleHints.some(function(h){ return n.indexOf(h) > -1; });
