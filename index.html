@@ -1387,10 +1387,47 @@
   var currentSearch = '';
   var currentScenarioId = null;
 
+  // ================= VOICE EXPLANATION =================
+  var VOICE_TEXT = {
+    runbook: 'In der IT sind Runbooks standardisierte Schritt-für-Schritt-Anleitungen. Sie enthalten konkrete Handlungsabläufe für wiederkehrende Aufgaben, Systemänderungen oder Störungsbehebungen, also Troubleshooting. Ihr Hauptziel ist es, IT-Prozesse effizienter, fehlerfreier und für das gesamte Team nachvollziehbar zu machen.',
+    playbook: 'In der IT sind Playbooks standardisierte Handlungsanweisungen oder automatisierte Workflows. Sie definieren Schritt für Schritt, wie Teams auf bestimmte Situationen, zum Beispiel Cyberangriffe, Systemausfälle oder wiederkehrende administrative Aufgaben, reagieren sollen. Sie dienen dazu, Prozesse zu beschleunigen, Fehler unter Stress zu minimieren und menschliches Wissen teamweit verfügbar zu machen.'
+  };
+  var cachedVoices = [];
+  function refreshVoices(){
+    if('speechSynthesis' in window){ cachedVoices = window.speechSynthesis.getVoices(); }
+  }
+  if('speechSynthesis' in window){
+    refreshVoices();
+    window.speechSynthesis.onvoiceschanged = refreshVoices;
+  }
+  function pickFemaleGermanVoice(){
+    if(!cachedVoices.length) return null;
+    var german = cachedVoices.filter(function(v){ return v.lang && v.lang.toLowerCase().indexOf('de') === 0; });
+    var femaleHints = ['katja','petra','anna','helena','marlene','vicki','female','frau','google deutsch'];
+    var pool = german.length ? german : cachedVoices;
+    var match = pool.find(function(v){
+      var n = v.name.toLowerCase();
+      return femaleHints.some(function(h){ return n.indexOf(h) > -1; });
+    });
+    return match || (german.length ? german[0] : null);
+  }
+  function speakExplanation(mode){
+    if(!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    var utter = new SpeechSynthesisUtterance(VOICE_TEXT[mode]);
+    utter.lang = 'de-DE';
+    utter.pitch = 1;
+    utter.rate = 1;
+    var voice = pickFemaleGermanVoice();
+    if(voice) utter.voice = voice;
+    window.speechSynthesis.speak(utter);
+  }
+
   // ================= HOME =================
   document.querySelectorAll('.type-card').forEach(function(card){
     card.addEventListener('click', function(){
       currentMode = card.dataset.mode;
+      speakExplanation(currentMode);
       showScreen('list');
       renderModeUI();
       renderCatTabs();
