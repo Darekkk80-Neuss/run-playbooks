@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playbook &amp; Runbook Generator – IT Service Management</title>
+<style>
+  :root{
+    --bg:#0f172a;
+    --panel:#111827;
+    --panel-2:#1f2937;
+    --border:#2d3748;
+    --text:#e5e7eb;
+    --text-dim:#9ca3af;
+    --accent:#3b82f6;
+    --accent-2:#2563eb;
+    --danger:#ef4444;
+    --ok:#22c55e;
+    --warn:#f59e0b;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;min-height:100%;}
+  body{
+    font-family:"Segoe UI",Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+  }
+  .screen{ display:none; min-height:100vh; }
+  .screen.active{ display:block; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    padding:10px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+    position:sticky; top:0; z-index:10;
+  }
+  .topbar h1{ font-size:15px; margin:0; display:flex; align-items:center; gap:8px; }
+  .topbar .badge{ background:var(--accent); color:#fff; font-size:10px; padding:2px 8px; border-radius:20px; font-weight:600; }
+  .topbar .right{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .user-chip{ font-size:12px; color:var(--text-dim); }
+  .mode-toggle{ display:flex; background:var(--panel-2); border:1px solid var(--border); border-radius:20px; padding:3px; }
+  .mode-toggle button{ border:none; background:transparent; color:var(--text-dim); padding:5px 14px; border-radius:16px; font-size:12px; cursor:pointer; font-weight:600; }
+  .mode-toggle button.active{ background:var(--accent); color:#fff; }
+
+  button, select, input{ font-family:inherit; }
+  button{
+    cursor:pointer;
+    background:var(--panel-2);
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:7px 12px;
+    font-size:13px;
+  }
+  button:hover{ background:#28344a; }
+  button.primary{ background:var(--accent); border-color:var(--accent-2); color:#fff; font-weight:600; }
+  button.primary:hover{ background:var(--accent-2); }
+  button.small{ padding:4px 9px; font-size:12px; }
+  button.ghost{ background:transparent; }
+
+  .container{ max-width:1100px; margin:0 auto; padding:24px 18px 60px; }
+
+  /* ---------- Login ---------- */
+  #screen-login{
+    display:none;
+    min-height:100vh;
+    align-items:center;
+    justify-content:center;
+    background:radial-gradient(circle at top, #1e293b, #0f172a 65%);
+  }
+  #screen-login.active{ display:flex; }
+  .login-card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:34px 32px;
+    width:100%;
+    max-width:360px;
+    box-shadow:0 20px 50px rgba(0,0,0,.4);
+  }
+  .login-card h1{ font-size:20px; margin:0 0 4px; text-align:center; }
+  .login-card .sub{ text-align:center; color:var(--text-dim); font-size:13px; margin-bottom:24px; }
+  .login-card label{ font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px; }
+  .login-card input{
+    width:100%; padding:10px 12px; margin-bottom:16px;
+    background:var(--panel-2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:14px;
+  }
+  .login-card button{ width:100%; padding:11px; font-size:14px; }
+  .login-error{ color:var(--danger); font-size:12px; text-align:center; margin:-8px 0 14px; min-height:14px; }
+  .login-hint{ text-align:center; color:#6b7280; font-size:11px; margin-top:18px; line-height:1.5; }
+
+  /* ---------- Home ---------- */
+  .hero{ text-align:center; padding:30px 0 10px; }
+  .hero h2{ font-size:22px; margin:0 0 8px; }
+  .hero p{ color:var(--text-dim); font-size:14px; max-width:560px; margin:0 auto; }
+  .type-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    max-width:760px;
+    margin:32px auto 0;
+  }
+  .type-card{
+    background:var(--panel);
+    border:2px solid var(--border);
+    border-radius:var(--radius);
+    padding:28px 22px;
+    cursor:pointer;
+    transition:border-color .15s, transform .15s;
+    text-align:left;
+  }
+  .type-card:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .type-card .icon{ font-size:30px; margin-bottom:10px; }
+  .type-card h3{ margin:0 0 8px; font-size:17px; }
+  .type-card p{ margin:0; color:var(--text-dim); font-size:13px; line-height:1.5; }
+
+  .home-stats{
+    display:flex; gap:16px; justify-content:center; margin-top:36px; flex-wrap:wrap;
+  }
+  .stat{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px;
+    padding:12px 18px; text-align:center; min-width:120px;
+  }
+  .stat b{ display:block; font-size:20px; }
+  .stat span{ font-size:11px; color:var(--text-dim); }
+
+  /* ---------- List screen ---------- */
+  .list-toolbar{
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:18px;
+  }
+  #searchBox{
+    flex:1; min-width:200px; padding:9px 12px; border-radius:6px;
+    background:var(--panel-2); border:1px solid var(--border); color:var(--text); font-size:13px;
+  }
+  .cat-tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .cat-tab{
+    padding:7px 14px; border-radius:20px; font-size:12.5px; font-weight:600;
+    border:1px solid var(--border); background:var(--panel-2); cursor:pointer; color:var(--text-dim);
+  }
+  .cat-tab.active{ color:#fff; border-color:transparent; }
+
+  .card-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+    gap:14px;
+  }
+  .scenario-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px 16px 14px; cursor:pointer; transition:border-color .15s, transform .15s;
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .scenario-card:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .cat-badge{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:12px; color:#fff; white-space:nowrap; }
+  .sev-badge{ font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:12px; white-space:nowrap; }
+  .sev-Kritisch{ background:rgba(239,68,68,.18); color:#f87171; }
+  .sev-Hoch{ background:rgba(245,158,11,.18); color:#fbbf24; }
+  .sev-Mittel{ background:rgba(234,179,8,.18); color:#eab308; }
+  .sev-Niedrig{ background:rgba(34,197,94,.18); color:#4ade80; }
+  .scenario-card h4{ margin:0; font-size:14.5px; line-height:1.3; }
+  .scenario-card .trigger{ font-size:12px; color:var(--text-dim); line-height:1.4; }
+  .scenario-card .go{ align-self:flex-start; font-size:12px; color:var(--accent); font-weight:600; margin-top:4px; }
+  .empty-state{ text-align:center; color:var(--text-dim); padding:40px 0; }
+
+  /* ---------- Detail screen ---------- */
+  #doc{
+    background:#fff; color:#111; max-width:900px; margin:0 auto;
+    padding:36px 34px; border-radius:6px; box-shadow:0 10px 30px rgba(0,0,0,.4);
+    line-height:1.5;
+  }
+  #doc h1.doc-title{ font-size:24px; margin:0 0 4px; color:#111827; }
+  #doc .doc-sub{ color:#4b5563; font-size:13px; margin-bottom:16px; }
+  #doc .meta-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; font-size:13px;
+    background:#f3f4f6; padding:14px 18px; border-radius:6px; margin-bottom:20px;
+  }
+  #doc .trigger-box{
+    background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:12px 16px;
+    font-size:13px; margin-bottom:20px;
+  }
+  #doc h2.doc-h2{
+    font-size:15.5px; border-bottom:2px solid #1f2937; padding-bottom:4px; margin:24px 0 10px; color:#111827;
+  }
+  #doc table.doc-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:6px; }
+  #doc table.doc-table th{ background:#1f2937; color:#fff; text-align:left; padding:6px 8px; }
+  #doc table.doc-table td{ border:1px solid #e5e7eb; padding:6px 8px; vertical-align:top; }
+  #doc table.doc-table tr:nth-child(even) td{ background:#f9fafb; }
+  #doc .esc-table th{ background:#7f1d1d; }
+  #doc .step-num{
+    display:inline-block; width:20px; height:20px; background:#e5e7eb; border-radius:50%;
+    text-align:center; font-size:11px; line-height:20px; margin-right:4px;
+  }
+  #doc .note-box{
+    background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:12px 16px; font-size:13px; margin-top:6px;
+  }
+  #doc .footer-note{ margin-top:30px; padding-top:12px; border-top:1px solid #e5e7eb; color:#9ca3af; font-size:11px; }
+  .detail-actions{ display:flex; gap:8px; margin:0 auto 16px; max-width:900px; flex-wrap:wrap; }
+
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:#374151; border-radius:5px; }
+
+  @media (max-width: 640px){
+    .type-grid{ grid-template-columns:1fr; }
+    #doc{ padding:22px 16px; }
+    #doc .meta-grid{ grid-template-columns:1fr; }
+    .topbar h1{ font-size:13px; }
+  }
+
+  @media print{
+    .topbar, .detail-actions, .list-toolbar, .cat-tabs{ display:none !important; }
+    body{ background:#fff; }
+    #doc{ box-shadow:none; border:none; max-width:none; padding:0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div class="screen" id="screen-login">
+  <div class="login-card">
+    <h1>🛠️ Playbook &amp; Runbook Generator</h1>
+    <div class="sub">IT Service Management &middot; Interner Zugang</div>
+    <label>Benutzername</label>
+    <input type="text" id="loginUser" autocomplete="username" placeholder="Benutzername">
+    <label>Passwort</label>
+    <input type="password" id="loginPass" autocomplete="current-password" placeholder="Passwort">
+    <div class="login-error" id="loginError"></div>
+    <button class="primary" id="btnLogin">Anmelden</button>
+    <div class="login-hint">Rein clientseitige Zugriffssperre für den internen Gebrauch – kein Ersatz für eine vollwertige Authentifizierung.</div>
+  </div>
+</div>
+
+<!-- ================= HOME ================= -->
+<div class="screen" id="screen-home">
+  <div class="topbar">
+    <h1>🛠️ Playbook &amp; Runbook Generator <span class="badge">ITSM</span></h1>
+    <div class="right">
+      <span class="user-chip" id="userChipHome"></span>
+      <button class="small ghost" id="btnLogoutHome">Abmelden</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="hero">
+      <h2>Was möchtest du erstellen?</h2>
+      <p>Wähle einen Dokumenttyp. Auf der nächsten Seite findest du 30 praxisnahe Best-Practice-Szenarien mit Handlungsschritten und Eskalationsmatrix, gruppiert in 5 Kategorien.</p>
+    </div>
+    <div class="type-grid">
+      <div class="type-card" data-mode="playbook">
+        <div class="icon">📘</div>
+        <h3>Playbook</h3>
+        <p>Strategisches Entscheidungsdokument für den Krisenstab: Rollen, Eskalationswege und Kommunikation im Vordergrund – für Führungskräfte &amp; Incident Manager.</p>
+      </div>
+      <div class="type-card" data-mode="runbook">
+        <div class="icon">📗</div>
+        <h3>Runbook</h3>
+        <p>Detaillierte technische Schritt-für-Schritt-Anleitung inkl. Tools, Befehlen und Zeitangaben – für Techniker &amp; Diensthabende im operativen Einsatz.</p>
+      </div>
+    </div>
+    <div class="home-stats">
+      <div class="stat"><b>30</b><span>Szenarien</span></div>
+      <div class="stat"><b>5</b><span>Kategorien</span></div>
+      <div class="stat"><b>5</b><span>Eskalationsmatrizen</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LIST ================= -->
+<div class="screen" id="screen-list">
+  <div class="topbar">
+    <h1>🛠️ <span id="modeLabel">Playbook</span>-Übersicht <span class="badge">ITSM</span></h1>
+    <div class="right">
+      <div class="mode-toggle">
+        <button data-mode="playbook" id="toggleP">Playbook</button>
+        <button data-mode="runbook" id="toggleR">Runbook</button>
+      </div>
+      <span class="user-chip" id="userChipList"></span>
+      <button class="small ghost" id="btnHomeFromList">🏠 Start</button>
+      <button class="small ghost" id="btnLogoutList">Abmelden</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="list-toolbar">
+      <input type="text" id="searchBox" placeholder="Szenario suchen...">
+    </div>
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="card-grid" id="cardGrid"></div>
+  </div>
+</div>
+
+<!-- ================= DETAIL ================= -->
+<div class="screen" id="screen-detail">
+  <div class="topbar">
+    <h1>🛠️ <span id="modeLabelDetail">Playbook</span> <span class="badge">ITSM</span></h1>
+    <div class="right">
+      <span class="user-chip" id="userChipDetail"></span>
+      <button class="small ghost" id="btnLogoutDetail">Abmelden</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="detail-actions">
+      <button id="btnBackToList">← Zurück zur Übersicht</button>
+      <button id="btnPrint">🖨️ PDF / Drucken</button>
+      <button id="btnExportHtml">📄 Als HTML exportieren</button>
+    </div>
+    <div id="doc"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+  // ================= AUTH =================
+  var CREDENTIALS = { user: "Darekkk80", pass: "Admin" };
+
+  function isLoggedIn(){ return localStorage.getItem('irb_auth') === '1'; }
+  function setLoggedIn(v){ if(v){ localStorage.setItem('irb_auth','1'); } else { localStorage.removeItem('irb_auth'); } }
+
+  document.getElementById('btnLogin').addEventListener('click', doLogin);
+  ['loginUser','loginPass'].forEach(function(id){
+    document.getElementById(id).addEventListener('keydown', function(e){ if(e.key === 'Enter') doLogin(); });
+  });
+
+  function doLogin(){
+    var u = document.getElementById('loginUser').value.trim();
+    var p = document.getElementById('loginPass').value;
+    if(u === CREDENTIALS.user && p === CREDENTIALS.pass){
+      setLoggedIn(true);
+      document.getElementById('loginError').textContent = '';
+      showScreen('home');
+    } else {
+      document.getElementById('loginError').textContent = 'Benutzername oder Passwort ist falsch.';
+    }
+  }
+
+  function doLogout(){
+    setLoggedIn(false);
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+    showScreen('login');
+  }
+  ['btnLogoutHome','btnLogoutList','btnLogoutDetail'].forEach(function(id){
+    document.getElementById(id).addEventListener('click', doLogout);
+  });
+  document.querySelectorAll('.user-chip').forEach(function(el){ el.textContent = '👤 ' + CREDENTIALS.user; });
+
+  // ================= SCREEN NAV =================
+  function showScreen(name){
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById('screen-' + name).classList.add('active');
+    window.scrollTo(0,0);
+  }
+
+  // ================= DATA =================
+  var COLS4 = ['step','description','responsible','duration'];
+  var COLS3C = ['audience','channel','message'];
+  function R(cols, tuples){
+    return tuples.map(function(t){
+      var o = {};
+      cols.forEach(function(k,i){ o[k] = t[i] || ''; });
+      return o;
+    });
+  }
+
+  var CATS = {
+    ir:  { label:'Störungsbehebung',              sub:'Incident Response',  color:'#3b82f6' },
+    bk:  { label:'Fehlgeschlagene Backups',        sub:'Backup & Recovery',  color:'#10b981' },
+    op:  { label:'Routineaufgaben & Wartung',      sub:'Operations',         color:'#8b5cf6' },
+    sec: { label:'Sicherheitsvorfälle',            sub:'Security Response',  color:'#f59e0b' },
+    ran: { label:'Ransomware/Malware-Verdacht',    sub:'Security Response',  color:'#ef4444' }
+  };
+
+  var ESCALATION = {
+    ir: R(['level','time','role','contact'], [
+      ['Stufe 1','0–15 Min.','Diensthabender Techniker (On-Call)','Bereitschaftstelefon'],
+      ['Stufe 2','15–30 Min.','Teamleiter IT-Betrieb','Telefon / Teams'],
+      ['Stufe 3','30–60 Min.','IT-Leiter / Head of IT Operations','Telefon / E-Mail'],
+      ['Stufe 4','> 60 Min. oder unternehmensweite Auswirkung','Geschäftsführung / CIO','Telefon / E-Mail']
+    ]),
+    bk: R(['level','time','role','contact'], [
+      ['Stufe 1','Bei Erkennung (Monitoring)','Backup-Administrator','Ticketsystem'],
+      ['Stufe 2','Nach 4 Std. ungelöst','Teamleiter Infrastructure','Telefon / E-Mail'],
+      ['Stufe 3','Nach 24 Std. oder kritisches System betroffen','IT-Leiter','Telefon / E-Mail'],
+      ['Stufe 4','Datenverlustrisiko / SLA-Verletzung','Geschäftsführung + Kunde/Auftraggeber','Telefon / E-Mail']
+    ]),
+    op: R(['level','time','role','contact'], [
+      ['Stufe 1','Geplantes Wartungsfenster','Durchführender Techniker','Ticketsystem'],
+      ['Stufe 2','Bei Komplikation während der Wartung','Teamleiter / Change Manager','Telefon / Teams'],
+      ['Stufe 3','Wartung verursacht ungeplanten Ausfall','Incident Manager (Wechsel in Incident-Prozess)','Telefon / E-Mail'],
+      ['Stufe 4','Unternehmensweite Auswirkung','IT-Leitung','Telefon / E-Mail']
+    ]),
+    sec: R(['level','time','role','contact'], [
+      ['Stufe 1','0–15 Min.','SOC-Analyst / Diensthabender Security','24/7-Security-Hotline'],
+      ['Stufe 2','15–30 Min.','CISO / Security Team Lead','Telefon / E-Mail'],
+      ['Stufe 3','30–60 Min.','Geschäftsführung + Rechtsabteilung','Telefon / E-Mail'],
+      ['Stufe 4','Bestätigter Datenschutzvorfall','Datenschutzbeauftragter + Aufsichtsbehörde (72h-Frist DSGVO) + externe Forensik','Offizielle Meldung']
+    ]),
+    ran: R(['level','time','role','contact'], [
+      ['Stufe 0','Sofort (0–5 Min.)','Melder: Gerät isolieren (Netzwerk trennen), Service Desk informieren','Vor Ort / Telefon'],
+      ['Stufe 1','5–15 Min.','Diensthabender SOC-Analyst / IT-Security','24/7-Security-Hotline'],
+      ['Stufe 2','15–30 Min.','CISO + IT-Leitung – Krisenteam aktivieren','Telefon / Teams'],
+      ['Stufe 3','30–60 Min.','Geschäftsführung, Rechtsabteilung, externer IR-Dienstleister/Forensik','Telefon / E-Mail'],
+      ['Stufe 4','Bestätigte Ransomware / Datenabfluss','Cyber-Versicherung, Behörden (BSI/LKA), Datenschutzbeauftragter, PR/Kommunikation','Offizielle Meldung']
+    ])
+  };
+
+  var SCENARIOS = [
+    // ---------------- Incident Response ----------------
+    { id:'ir1', cat:'ir', sev:'Kritisch', title:'Serverausfall / Dienstausfall',
+      trigger:'Monitoring-Alarm: Health-Check fehlgeschlagen, Server/Dienst nicht erreichbar.',
+      immediate:R(COLS4,[
+        ['Alarm verifizieren','Ping / Health-Check erneut prüfen','Techniker','5 Min.'],
+        ['Incident eröffnen','P1-Ticket anlegen und Bridge/Call starten','Diensthabender','5 Min.'],
+        ['Traffic umleiten','Betroffenen Server aus dem Load Balancer nehmen','Ops-Team','10 Min.'],
+        ['Nutzer informieren','Status-Page aktualisieren','Service Desk','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Logs prüfen','System- und Applikationslogs auf Fehler prüfen','Ops-Team','15 Min.'],
+        ['Ressourcen prüfen','CPU, RAM, Diskspace, Netzwerkauslastung prüfen','Ops-Team','10 Min.'],
+        ['Änderungen prüfen','Deployments/Config-Änderungen der letzten 24h prüfen','Change-Team','10 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Dienst neu starten','Betroffenen Dienst/Prozess kontrolliert neu starten','Ops-Team','10 Min.'],
+        ['Failover','Bei Hardwaredefekt: Failover auf Ersatzsystem','Ops-Team','20 Min.'],
+        ['Verifizieren','Erfolgreichen Health-Check bestätigen','Diensthabender','5 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Traffic zurückführen','Traffic schrittweise wieder aufschalten','Ops-Team','10 Min.'],
+        ['Beobachten','Monitoring 30 Min. engmaschig beobachten','Diensthabender','30 Min.'],
+        ['Rollback-Option','Rollback bereithalten falls erneuter Ausfall','Ops-Team','variabel']
+      ]),
+      communication:R(COLS3C,[
+        ['Interne Stakeholder','Teams-Kanal #incidents','Störung bei [Dienst] wird untersucht, Update in 15 Min.'],
+        ['Kunden/Endnutzer','Status-Page','Wir sind uns eines Problems bewusst und arbeiten an der Behebung.']
+      ]),
+      note:'Root-Cause-Analyse und Health-Check-Schwellwerte im Nachgang überprüfen.' },
+
+    { id:'ir2', cat:'ir', sev:'Kritisch', title:'Datenbank-Störung',
+      trigger:'Alarm: Datenbank-Verbindungsfehler oder Latenz über Schwellwert.',
+      immediate:R(COLS4,[
+        ['Status prüfen','Erreichbarkeit von Primary/Replica prüfen','DBA','5 Min.'],
+        ['Incident eröffnen','P1-Ticket eröffnen, App-Team informieren','Diensthabender','5 Min.'],
+        ['Schreibzugriffe drosseln','Falls möglich Schreibvorgänge begrenzen','DBA','10 Min.'],
+        ['Betroffene Systeme','Betroffene Applikationen identifizieren','DBA','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Slow-Query-Log','Lang laufende/blockierende Abfragen prüfen','DBA','15 Min.'],
+        ['Locks prüfen','Deadlocks und Sperren analysieren','DBA','10 Min.'],
+        ['Ressourcen prüfen','Disk-I/O und Connection-Pool-Auslastung prüfen','DBA','10 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Queries beenden','Blockierende Queries killen','DBA','10 Min.'],
+        ['Failover','Kontrollierten Failover auf Replica durchführen','DBA','15 Min.'],
+        ['Optimieren','Index-/Query-Optimierung bei Performance-Ursache','DBA','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Schreibzugriffe freigeben','Normalbetrieb wiederherstellen','DBA','10 Min.'],
+        ['Replikation prüfen','Replikations-Lag bis Normalwert beobachten','DBA','30 Min.'],
+        ['Backup-Restore','Falls nötig aus Backup wiederherstellen','DBA','variabel']
+      ]),
+      communication:R(COLS3C,[
+        ['Anwendungsteams','Teams-Kanal #db-incidents','DB-Störung erkannt, Verzögerungen möglich, Update folgt.'],
+        ['Management','Telefon/E-Mail','Kurzupdate zu Status, Auswirkung und ETA.']
+      ]),
+      note:'Slow-Queries und fehlende Indizes im Wochenreview nachbearbeiten.' },
+
+    { id:'ir3', cat:'ir', sev:'Kritisch', title:'Netzwerkausfall (Standort/WAN)',
+      trigger:'SNMP-Trap: Link Down oder erhöhter Paketverlust auf kritischer Strecke.',
+      immediate:R(COLS4,[
+        ['Umfang bestimmen','Betroffene Standorte/Segmente eingrenzen','Netzwerktechniker','10 Min.'],
+        ['Incident eröffnen','P1-Ticket eröffnen, Teams informieren','Diensthabender','5 Min.'],
+        ['Redundanz aktivieren','Failover auf redundante Leitung/Gerät','Netzwerktechniker','10 Min.'],
+        ['Vor-Ort-Support','Techniker bei Bedarf alarmieren','Diensthabender','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Hardware prüfen','Kabel/SFP-Module/Portstatus prüfen','Netzwerktechniker','15 Min.'],
+        ['Konfiguration prüfen','Letzte Config-Änderungen prüfen','Netzwerktechniker','10 Min.'],
+        ['Provider kontaktieren','Status beim Carrier/ISP erfragen','Netzwerktechniker','variabel']
+      ]),
+      resolution:R(COLS4,[
+        ['Gerät neu starten','Betroffenes Gerät kontrolliert neu starten','Netzwerktechniker','10 Min.'],
+        ['Hardware tauschen','Defektes Modul/Gerät ersetzen','Netzwerktechniker','30 Min.'],
+        ['Config wiederherstellen','Letzte funktionierende Konfiguration einspielen','Netzwerktechniker','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Konnektivität an allen Standorten testen','Netzwerktechniker','15 Min.'],
+        ['Zurückschalten','Rückschaltung auf Primärpfad','Netzwerktechniker','10 Min.'],
+        ['Beobachten','Stabilität 60 Min. beobachten','Diensthabender','60 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Alle Standorte','E-Mail/Intranet','Netzwerkstörung erkannt, Behebung läuft.'],
+        ['IT-Management','Teams/Telefon','Statusupdate inkl. betroffener Standorte und ETA.']
+      ]),
+      note:'Redundanzkonzept und Alarmschwellwerte regelmäßig im DR-Test prüfen.' },
+
+    { id:'ir4', cat:'ir', sev:'Hoch', title:'Anwendungsfehler / Applikationsausfall',
+      trigger:'APM-Alarm: erhöhte HTTP-5xx-Rate oder Exception-Rate.',
+      immediate:R(COLS4,[
+        ['Verifizieren','Fehlerbild und Umfang bestätigen','App-Support','10 Min.'],
+        ['Incident eröffnen','Ticket eröffnen, Entwicklung informieren','Diensthabender','5 Min.'],
+        ['Feature-Flag','Fehlerhafte Funktion deaktivieren','Entwicklung','10 Min.'],
+        ['Umfang eingrenzen','Betroffene Nutzergruppe bestimmen','App-Support','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Stacktraces prüfen','Exceptions im Error-Tracking analysieren','Entwicklung','15 Min.'],
+        ['Deployment prüfen','Korrelation mit letztem Release prüfen','Entwicklung','10 Min.'],
+        ['Abhängigkeiten prüfen','Status externer APIs/Services prüfen','Entwicklung','10 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Rollback','Letztes Deployment zurückrollen','Entwicklung/Ops','15 Min.'],
+        ['Hotfix','Hotfix entwickeln, testen, deployen','Entwicklung','variabel'],
+        ['Cache bereinigen','Fehlerhaften Cache/Sessions leeren','Ops-Team','10 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Rückgang der Fehlerrate bestätigen','App-Support','15 Min.'],
+        ['Reaktivieren','Feature schrittweise wieder aktivieren','Entwicklung','10 Min.'],
+        ['Beobachten','Fehlerrate 60 Min. beobachten','Diensthabender','60 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Interne Stakeholder','Teams-Kanal #incidents','Erhöhte Fehlerrate in [Anwendung] wird untersucht.'],
+        ['Kunden','Status-Page/In-App-Banner','Einige Nutzer erleben Fehler, wir arbeiten an einer Lösung.']
+      ]),
+      note:'Deployment-Pipeline um automatisierte Rollback-Trigger ergänzen.' },
+
+    { id:'ir5', cat:'ir', sev:'Hoch', title:'Storage voll / Speicherplatzengpass',
+      trigger:'Monitoring-Alarm: Diskauslastung über 90% auf kritischem System.',
+      immediate:R(COLS4,[
+        ['System identifizieren','Betroffenes System/Partition bestimmen','Ops-Team','5 Min.'],
+        ['Incident eröffnen','Ticket eröffnen','Diensthabender','5 Min.'],
+        ['Sofort-Bereinigung','Unkritische temporäre Dateien/Logs löschen','Ops-Team','15 Min.'],
+        ['Schreibvorgänge prüfen','Kritische Dienste prüfen/ggf. pausieren','Ops-Team','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Analyse','Größte Verzeichnisse/Dateien identifizieren','Ops-Team','10 Min.'],
+        ['Ursache ermitteln','Wachstumsursache bestimmen (Logs/Backups/Daten)','Ops-Team','15 Min.'],
+        ['Trend prüfen','Kapazitätsplanung/Trend prüfen','Ops-Team','10 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Archivieren','Nicht benötigte Dateien archivieren/löschen','Ops-Team','15 Min.'],
+        ['Erweitern','Storage virtuell/physisch erweitern','Ops-Team','30 Min.'],
+        ['Log-Rotation','Retention-Policy korrigieren','Ops-Team','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Freien Speicherplatz und Dienststatus prüfen','Ops-Team','10 Min.'],
+        ['Alarme anpassen','Monitoring-Schwellwert anpassen','Ops-Team','15 Min.'],
+        ['Prognose','Kapazität für 3 Monate prognostizieren','Ops-Team','variabel']
+      ]),
+      communication:R(COLS3C,[
+        ['Betroffene Fachbereiche','E-Mail','Kurzzeitige Einschränkung durch Speicherengpass behoben.']
+      ]),
+      note:'Automatisiertes Housekeeping/Log-Rotation einführen, um Wiederholung zu vermeiden.' },
+
+    { id:'ir6', cat:'ir', sev:'Hoch', title:'E-Mail-Dienst-Ausfall (Exchange/O365)',
+      trigger:'Monitoring/Nutzermeldungen: E-Mail-Versand oder -Empfang gestört.',
+      immediate:R(COLS4,[
+        ['Anbieter-Status prüfen','Service-Health-Dashboard prüfen (z. B. M365 Admin Center)','Ops-Team','10 Min.'],
+        ['Incident eröffnen','Ticket eröffnen','Diensthabender','5 Min.'],
+        ['Umfang eingrenzen','Betroffenen Nutzerkreis bestimmen','Service Desk','10 Min.'],
+        ['Alternative Kanäle','Teams/Telefon als Ausweichkanal aktivieren','Service Desk','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Mail-Flow prüfen','Logs auf Zustellprobleme prüfen','Ops-Team','15 Min.'],
+        ['DNS/Zertifikate prüfen','MX-Einträge und Zertifikate prüfen','Ops-Team','10 Min.'],
+        ['Tenant-Status prüfen','Anbieter-Störungsmeldung prüfen','Ops-Team','10 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Anbieterstörung','Statusseite beobachten, Wartezeit kommunizieren','Ops-Team','variabel'],
+        ['Interner Fehler','Connector/Transport-Regel korrigieren','Ops-Team','20 Min.'],
+        ['Warteschlange','Mail-Warteschlange manuell freigeben','Ops-Team','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Testen','Zustellung mit Testmails verifizieren','Ops-Team','10 Min.'],
+        ['Rückstand prüfen','Warteschlangen auf Rückstand prüfen','Ops-Team','15 Min.'],
+        ['Informieren','Nutzer über Wiederherstellung informieren','Service Desk','10 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Alle Mitarbeiter','Intranet/Teams','E-Mail-Dienst gestört, alternative Kommunikation über Teams.']
+      ]),
+      note:'Abhängigkeit vom Cloud-Anbieter im BCM-Plan berücksichtigen.' },
+
+    // ---------------- Fehlgeschlagene Backups ----------------
+    { id:'bk1', cat:'bk', sev:'Mittel', title:'Tägliches Backup fehlgeschlagen',
+      trigger:'Backup-Job-Report: Status "Failed" oder Timeout überschritten.',
+      immediate:R(COLS4,[
+        ['Logs prüfen','Fehlermeldung des Backup-Jobs analysieren','Backup-Admin','10 Min.'],
+        ['Kritikalität bestimmen','Betroffenes System einordnen','Backup-Admin','5 Min.'],
+        ['Manueller Lauf','Backup manuell erneut anstoßen','Backup-Admin','10 Min.'],
+        ['Ticket eröffnen','Bei wiederholtem Fehlschlag eskalieren','Backup-Admin','5 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Konnektivität prüfen','Verbindung zum Backup-Ziel prüfen','Backup-Admin','10 Min.'],
+        ['Agent prüfen','Agentenstatus auf Quellsystem prüfen','Backup-Admin','10 Min.'],
+        ['Änderungen prüfen','Patches/Reboots seit letztem Erfolg prüfen','Backup-Admin','10 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Agent neu starten','Backup-Agent neu starten/aktualisieren','Backup-Admin','15 Min.'],
+        ['Konfiguration korrigieren','Zeitfenster/Ausschlüsse anpassen','Backup-Admin','15 Min.'],
+        ['Überwachen','Erneuten Lauf bis Erfolg beobachten','Backup-Admin','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Erfolgreichen Abschluss und Integrität bestätigen','Backup-Admin','15 Min.'],
+        ['Nachbeobachten','Nächste 3 Läufe engmaschig beobachten','Backup-Admin','3 Tage'],
+        ['Reporting','Backup-Report an Verantwortliche senden','Backup-Admin','5 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Systemverantwortlicher','E-Mail','Backup-Fehler behoben, nächster Lauf wird überwacht.']
+      ]),
+      note:'Wiederkehrende Fehlercodes in der Wissensdatenbank dokumentieren.' },
+
+    { id:'bk2', cat:'bk', sev:'Hoch', title:'Backup-Speicherziel nicht erreichbar oder voll',
+      trigger:'Alarm: Backup-Repository nicht erreichbar oder Kapazität über 95%.',
+      immediate:R(COLS4,[
+        ['Erreichbarkeit prüfen','Ping/Freigabe des Speicherziels prüfen','Backup-Admin','10 Min.'],
+        ['Kapazität prüfen','Freien Speicherplatz prüfen','Backup-Admin','5 Min.'],
+        ['Priorisieren','Unkritische Backups pausieren','Backup-Admin','10 Min.'],
+        ['Ticket eröffnen','Kapazitätsengpass eskalieren','Backup-Admin','5 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Netzwerk prüfen','Verbindung zum Storage-Ziel prüfen','Ops-Team','10 Min.'],
+        ['Retention prüfen','Alte Sicherungen/Policy prüfen','Backup-Admin','15 Min.'],
+        ['Trend analysieren','Wachstumstrend der Datenmenge analysieren','Backup-Admin','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Bereinigen','Veraltete Sicherungen gemäß Retention löschen','Backup-Admin','15 Min.'],
+        ['Erweitern','Speicherkapazität erweitern','Backup-Admin','30 Min.'],
+        ['Optimieren','Deduplizierung/Kompression aktivieren','Backup-Admin','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Nächsten regulären Lauf prüfen','Backup-Admin','variabel'],
+        ['Alarm anpassen','Kapazitätsschwellwert anpassen','Backup-Admin','10 Min.'],
+        ['Planung','Kapazitätsplanung für 6 Monate aktualisieren','Backup-Admin','variabel']
+      ]),
+      communication:R(COLS3C,[
+        ['IT-Leitung','E-Mail','Backup-Speicherengpass behoben, Kapazitätserweiterung eingeleitet.']
+      ]),
+      note:'Langfristige Kapazitätsplanung mit dem Storage-Team abstimmen.' },
+
+    { id:'bk3', cat:'bk', sev:'Kritisch', title:'Restore-Test / Wiederherstellung schlägt fehl',
+      trigger:'Geplanter Restore-Test oder Notfall-Restore liefert Fehler oder korrupte Daten.',
+      immediate:R(COLS4,[
+        ['Dokumentieren','Fehlermeldung des Restore-Vorgangs sichern','Backup-Admin','10 Min.'],
+        ['Alternativen prüfen','Ältere Sicherungspunkte identifizieren','Backup-Admin','10 Min.'],
+        ['Eskalieren','Bei Notfall IT-Leitung sofort informieren','Diensthabender','5 Min.'],
+        ['Priorisieren','Betroffene Systeme/Daten priorisieren','Backup-Admin','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Integrität prüfen','Checksum der Sicherungsdatei prüfen','Backup-Admin','15 Min.'],
+        ['Kompatibilität prüfen','Backup-Software/Zielsystem prüfen','Backup-Admin','15 Min.'],
+        ['Historie vergleichen','Vorherige erfolgreiche Restore-Tests vergleichen','Backup-Admin','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Fallback-Restore','Wiederherstellung aus älterem verifizierten Stand','Backup-Admin','variabel'],
+        ['Update','Backup-Software/Firmware aktualisieren','Backup-Admin','30 Min.'],
+        ['Neu konfigurieren','Betroffenen Backup-Job neu einrichten','Backup-Admin','20 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Vollständigkeit prüfen','Wiederhergestellte Daten prüfen','Fachbereich','variabel'],
+        ['Erneuter Test','Restore-Test terminieren und wiederholen','Backup-Admin','1 Woche'],
+        ['Dokumentieren','Restore-Testprotokoll aktualisieren','Backup-Admin','15 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['IT-Leitung','Meeting/E-Mail','Restore-Fähigkeit war eingeschränkt, Maßnahmen eingeleitet.']
+      ]),
+      note:'Ergebnis für Audit/ISO-27001-Nachweis der Wiederherstellbarkeit dokumentieren.' },
+
+    { id:'bk4', cat:'bk', sev:'Mittel', title:'Backup-Fenster überschritten',
+      trigger:'Alarm: Backup-Job läuft noch nach Ende des definierten Wartungsfensters.',
+      immediate:R(COLS4,[
+        ['Status prüfen','Prüfen ob Job hängt oder noch läuft','Backup-Admin','10 Min.'],
+        ['Auswirkung prüfen','Einfluss auf Produktionsleistung prüfen','Ops-Team','10 Min.'],
+        ['Drosseln','Bei Performance-Einbußen Priorität/Bandbreite senken','Backup-Admin','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Datenwachstum prüfen','Volumenwachstum seit letztem Lauf prüfen','Backup-Admin','15 Min.'],
+        ['Bandbreite prüfen','Netzwerkbandbreite im Backup-Fenster prüfen','Ops-Team','10 Min.'],
+        ['Änderungsrate prüfen','Änderungsrate der Quelldaten analysieren','Backup-Admin','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Fenster anpassen','Backup-Fenster verlängern','Backup-Admin','15 Min.'],
+        ['Strategie ändern','Inkrementell statt Vollsicherung konfigurieren','Backup-Admin','20 Min.'],
+        ['Throttling','Bandbreitenlimitierung einrichten','Backup-Admin','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Folgenden Lauf im neuen Zeitfenster prüfen','Backup-Admin','variabel'],
+        ['Beobachten','Produktionsperformance während Backup prüfen','Ops-Team','1 Woche']
+      ]),
+      communication:R(COLS3C,[
+        ['Betroffene Fachbereiche','E-Mail','Backup-Zeitfenster angepasst, keine weiteren Einschränkungen erwartet.']
+      ]),
+      note:'Backup-Strategie (Voll/Inkrementell/Differenziell) regelmäßig überprüfen.' },
+
+    { id:'bk5', cat:'bk', sev:'Mittel', title:'Backup-Agent/Lizenz abgelaufen',
+      trigger:'Alarm oder Job-Fehler: Lizenz abgelaufen oder Agent nicht kompatibel.',
+      immediate:R(COLS4,[
+        ['Betroffene Systeme','Systeme mit abgelaufener Lizenz identifizieren','Backup-Admin','10 Min.'],
+        ['Verlängerung einleiten','Bestellung/Verlängerung der Lizenz starten','Backup-Admin','15 Min.'],
+        ['Zwischensicherung','Manuelle Zwischensicherung falls möglich','Backup-Admin','20 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Ablaufdaten prüfen','Lizenzablauf aller Systeme prüfen','Backup-Admin','15 Min.'],
+        ['Beschaffung prüfen','Vertragslaufzeit/Prozess prüfen','Einkauf/Backup-Admin','variabel']
+      ]),
+      resolution:R(COLS4,[
+        ['Lizenz einspielen','Neue Lizenz einspielen, Agent aktualisieren','Backup-Admin','20 Min.'],
+        ['Testen','Backup-Job testweise ausführen','Backup-Admin','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Regulären Backup-Zyklus prüfen','Backup-Admin','variabel'],
+        ['Erinnerung einrichten','Monitoring 60 Tage vor Ablauf einrichten','Backup-Admin','15 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Einkauf/IT-Leitung','E-Mail','Lizenzverlängerung erforderlich, Bestellung eingeleitet.']
+      ]),
+      note:'Zentrale Lizenzübersicht mit automatischer Ablaufwarnung pflegen.' },
+
+    { id:'bk6', cat:'bk', sev:'Hoch', title:'Unvollständige/inkonsistente Sicherung',
+      trigger:'Backup-Report: Warnung "Application-consistent snapshot failed", nur crash-konsistente Sicherung.',
+      immediate:R(COLS4,[
+        ['Betroffenes System','Betroffene Datenbank/Applikation identifizieren','Backup-Admin/DBA','10 Min.'],
+        ['Risiko dokumentieren','Aktuellen Sicherungsstatus als Risiko festhalten','Backup-Admin','5 Min.'],
+        ['Manuelle Sicherung','Applikationskonsistente Sicherung anstoßen','DBA','20 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['VSS prüfen','VSS-Writer-Status auf Quellsystem prüfen','Ops-Team','15 Min.'],
+        ['Speicher prüfen','Speicherplatz für Snapshot-Erstellung prüfen','Ops-Team','10 Min.'],
+        ['Kompatibilität prüfen','Backup-Software mit DB-Version abgleichen','DBA','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['VSS reparieren','Fehlerhaften VSS-Writer neu registrieren','Ops-Team','20 Min.'],
+        ['Update','Backup-Software/Plugin aktualisieren','Backup-Admin','20 Min.'],
+        ['Neu konfigurieren','Job mit applikationskonsistenter Option einrichten','Backup-Admin','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Applikationskonsistente Sicherung bestätigen','DBA','15 Min.'],
+        ['Testen','Testweisen Restore in Sandbox durchführen','Backup-Admin','variabel']
+      ]),
+      communication:R(COLS3C,[
+        ['DBA-Team/IT-Leitung','E-Mail','Sicherungskonsistenz wiederhergestellt, Restore-Test läuft.']
+      ]),
+      note:'Applikationskonsistente Sicherungen für Datenbanken sind Pflicht – regelmäßig verifizieren.' },
+
+    // ---------------- Routineaufgaben & Wartung ----------------
+    { id:'op1', cat:'op', sev:'Niedrig', title:'Geplantes Patch-Management / Update-Wartungsfenster',
+      trigger:'Geplanter Wartungstermin gemäß Patch-Zyklus (z. B. Patch Tuesday + X Tage).',
+      immediate:R(COLS4,[
+        ['Ankündigen','Wartungsfenster mind. 3 Tage vorher kommunizieren','Change-Manager','einmalig'],
+        ['Change-Ticket','Change mit Rollback-Plan erstellen','Techniker','30 Min.'],
+        ['Backup sicherstellen','Vollständiges Backup vor Patch prüfen','Backup-Admin','30 Min.'],
+        ['Wartungsmodus','Statusseite/Wartungsmodus aktivieren','Ops-Team','5 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Release-Notes prüfen','Bekannte Probleme des Patches prüfen','Techniker','20 Min.'],
+        ['Staging-Test','Testsystem vorab patchen und validieren','Techniker','variabel']
+      ]),
+      resolution:R(COLS4,[
+        ['Patches einspielen','Patches gemäß Plan auf Produktivsystemen einspielen','Techniker','variabel'],
+        ['Funktionstest','Dienste neu starten und testen','Techniker','30 Min.'],
+        ['Rollback','Bei Fehlschlag Rollback gemäß Plan durchführen','Techniker','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Beobachten','Systemstabilität 24 Std. beobachten','Diensthabender','24 Std.'],
+        ['Wartungsmodus beenden','Statusseite aktualisieren','Ops-Team','5 Min.'],
+        ['Dokumentieren','Patch-Dokumentation abschließen','Techniker','15 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Alle Nutzer','Intranet/E-Mail','Wartungsfenster am [Datum], kurzzeitige Einschränkungen möglich.']
+      ]),
+      note:'Patch-Erfolg und Ausfallzeit im Change-Log für Audit dokumentieren.' },
+
+    { id:'op2', cat:'op', sev:'Mittel', title:'Zertifikat läuft ab / muss erneuert werden',
+      trigger:'Monitoring-Alarm: SSL/TLS-Zertifikat läuft in unter 30 Tagen ab.',
+      immediate:R(COLS4,[
+        ['Betroffene Dienste','Domains/Dienste identifizieren','Techniker','10 Min.'],
+        ['Verantwortlichkeit prüfen','Zertifikatsanbieter/CA prüfen','Techniker','10 Min.'],
+        ['Erneuerung beantragen','Erneuerung bei CA einleiten','Techniker','20 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Kette prüfen','Zertifikatskette und Verwendungsorte prüfen','Techniker','15 Min.'],
+        ['Automatisierung prüfen','Status der automatischen Erneuerung prüfen','Techniker','10 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Einspielen','Neues Zertifikat auf betroffenen Systemen einspielen','Techniker','20 Min.'],
+        ['Neu laden','Dienste neu laden/starten','Techniker','10 Min.'],
+        ['Validieren','Zertifikat mit externem Prüf-Tool validieren','Techniker','10 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Testen','Erreichbarkeit aller betroffenen Dienste testen','Techniker','15 Min.'],
+        ['Automatisieren','Automatische Erneuerung einrichten','Techniker','20 Min.'],
+        ['Erinnerung','Alarm 60/30/7 Tage vor Ablauf einrichten','Techniker','15 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['IT-Team','Ticket-Update','Zertifikat erfolgreich erneuert, keine Auswirkung für Nutzer.']
+      ]),
+      note:'Zentrale Zertifikatsübersicht mit automatischem Monitoring pflegen.' },
+
+    { id:'op3', cat:'op', sev:'Niedrig', title:'Speicherplatz-Bereinigung bei kritischem Server',
+      trigger:'Geplante Routinewartung oder präventiver Hinweis aus Kapazitätsmonitoring (über 75%).',
+      immediate:R(COLS4,[
+        ['Prüfen','Betroffenes System und Auslastung prüfen','Techniker','10 Min.'],
+        ['Change-Ticket','Ticket für Bereinigung erstellen','Techniker','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Analyse','Größte Verzeichnisse/temporäre Dateien identifizieren','Techniker','15 Min.'],
+        ['Abstimmen','Löschkandidaten mit Fachbereich abstimmen','Techniker','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Bereinigen','Temporäre Dateien, Logs, Caches bereinigen','Techniker','20 Min.'],
+        ['Entfernen','Nicht benötigte Software/Snapshots entfernen','Techniker','20 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Freien Speicherplatz und Stabilität prüfen','Techniker','10 Min.'],
+        ['Dokumentieren','Retention-Policy dokumentieren','Techniker','15 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Systemverantwortlicher','E-Mail','Bereinigung erfolgreich durchgeführt, Speicherplatz verfügbar.']
+      ]),
+      note:'Automatisiertes Housekeeping-Skript einführen, um wiederkehrende Engpässe zu vermeiden.' },
+
+    { id:'op4', cat:'op', sev:'Niedrig', title:'Benutzerkonto anlegen/deaktivieren (On-/Offboarding)',
+      trigger:'HR-Ticket: Neuer Mitarbeiter startet oder Mitarbeiter verlässt das Unternehmen.',
+      immediate:R(COLS4,[
+        ['Ticket prüfen','HR-Formular auf Vollständigkeit prüfen','Service Desk','10 Min.'],
+        ['Genehmigung prüfen','Freigabe durch Vorgesetzten/HR verifizieren','Service Desk','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Rollen ermitteln','Benötigte Berechtigungen anhand Abteilung ermitteln','Service Desk','15 Min.'],
+        ['Zugriffe auflisten','Bei Offboarding alle Systeme mit Zugriff auflisten','Service Desk','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Konto anlegen/deaktivieren','Konto in AD/Cloud-Verzeichnis anlegen bzw. sperren','Service Desk','15 Min.'],
+        ['Berechtigungen vergeben','Rechte gemäß Rollenkonzept setzen/entziehen','Service Desk','15 Min.'],
+        ['Zugänge sperren','Zugangskarten/Geräte bei Offboarding einziehen','Service Desk','20 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Zugriff/Sperrung mit Testanmeldung prüfen','Service Desk','10 Min.'],
+        ['Dokumentieren','Abschluss im Ticketsystem dokumentieren','Service Desk','10 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Vorgesetzter/HR','E-Mail','Konto wurde erfolgreich eingerichtet/deaktiviert.']
+      ]),
+      note:'Offboarding-Checkliste konsequent nutzen, um verwaiste Konten zu vermeiden.' },
+
+    { id:'op5', cat:'op', sev:'Mittel', title:'Geplanter Neustart / Failover-Test (DR-Test)',
+      trigger:'Jährlicher/quartalsweiser Disaster-Recovery-Test gemäß Notfallplan.',
+      immediate:R(COLS4,[
+        ['Bestätigen','Testfenster und Beteiligte final bestätigen','DR-Koordinator','einmalig'],
+        ['Change-Ticket','Ticket mit Testszenario und Rollback-Plan erstellen','DR-Koordinator','30 Min.'],
+        ['Backup sicherstellen','Vollständiges Backup vor Test prüfen','Backup-Admin','30 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Umfang abstimmen','Testumfang (Systeme/Standorte) final klären','DR-Koordinator','20 Min.'],
+        ['Kommunikation prüfen','Teilnehmerliste prüfen','DR-Koordinator','10 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Failover auslösen','Umschaltung auf DR-Standort/Ersatzsystem','Ops-Team','variabel'],
+        ['Testen','Funktionsfähigkeit kritischer Anwendungen prüfen','Fachbereiche','variabel'],
+        ['Failback','Rückschaltung auf Primärsystem durchführen','Ops-Team','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Normalbetrieb nach Failback prüfen','Ops-Team','30 Min.'],
+        ['Dokumentieren','Testergebnisse und Ausfallzeiten festhalten','DR-Koordinator','30 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['IT-Leitung/Management','Testbericht','DR-Test durchgeführt, Ergebnisse und Optimierungspotenzial im Bericht.']
+      ]),
+      note:'Erkenntnisse aus dem Test in den Notfallplan (BCM) einarbeiten.' },
+
+    { id:'op6', cat:'op', sev:'Niedrig', title:'Log-Rotation / Log-Archivierung und Monitoring-Check',
+      trigger:'Geplante monatliche Routineprüfung des Log-Managements.',
+      immediate:R(COLS4,[
+        ['Prüfen','Log-Speicherverbrauch kritischer Systeme prüfen','Techniker','15 Min.'],
+        ['Regeln prüfen','Monitoring-Alarmregeln auf Aktualität prüfen','Techniker','15 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Compliance prüfen','Retention-Zeiten mit Vorgaben abgleichen','Techniker','20 Min.'],
+        ['Lücken finden','Fehlende/doppelte Alarmregeln identifizieren','Techniker','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Konfigurieren','Log-Rotation-Konfiguration anpassen','Techniker','20 Min.'],
+        ['Archivieren','Alte Logs gemäß Richtlinie archivieren/löschen','Techniker','20 Min.'],
+        ['Aktualisieren','Monitoring-Regeln aktualisieren','Techniker','20 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Testen','Testalarm auslösen und Zustellung prüfen','Techniker','10 Min.'],
+        ['Dokumentieren','Änderungen dokumentieren','Techniker','10 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['IT-Leitung','Kurzbericht','Log-Management und Monitoring routinemäßig geprüft und aktualisiert.']
+      ]),
+      note:'Regelmäßige Überprüfung verhindert blinde Flecken im Monitoring.' },
+
+    // ---------------- Sicherheitsvorfälle ----------------
+    { id:'sec1', cat:'sec', sev:'Hoch', title:'Unautorisierter Zugriffsversuch / Brute-Force',
+      trigger:'SIEM-Alarm: Mehrfache fehlgeschlagene Login-Versuche auf kritisches System.',
+      immediate:R(COLS4,[
+        ['Verifizieren','Betroffenes Konto/System identifizieren','SOC-Analyst','10 Min.'],
+        ['IP sperren','Quell-IP(s) temporär sperren','SOC-Analyst','10 Min.'],
+        ['Konto sperren','Betroffenes Konto vorsorglich sperren','SOC-Analyst','10 Min.'],
+        ['Ticket eröffnen','Security-Incident-Ticket eröffnen','SOC-Analyst','5 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Historie prüfen','Login-Historie und Herkunft prüfen','SOC-Analyst','15 Min.'],
+        ['Erfolg prüfen','Prüfen ob Angriff erfolgreich war','SOC-Analyst','20 Min.'],
+        ['Systeme prüfen','Weitere Auffälligkeiten prüfen','SOC-Analyst','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Zurücksetzen','Passwort/Zugangsdaten zurücksetzen','IT-Security','15 Min.'],
+        ['MFA erzwingen','MFA für betroffenes Konto erzwingen','IT-Security','10 Min.'],
+        ['Regeln anpassen','Firewall-/WAF-Regeln anpassen','Netzwerkteam','20 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Freigeben','Kontosperrung nach Verifizierung aufheben','IT-Security','10 Min.'],
+        ['Monitoring','Erhöhtes Monitoring für 72 Std. einrichten','SOC-Analyst','72 Std.']
+      ]),
+      communication:R(COLS3C,[
+        ['Betroffener Nutzer','Telefon/E-Mail','Verdächtige Anmeldeversuche erkannt, Konto wurde geschützt.'],
+        ['IT-Leitung','Kurzbericht','Brute-Force-Versuch abgewehrt, keine Kompromittierung festgestellt.']
+      ]),
+      note:'Bei erfolgreichem Zugriff sofort in den Ransomware/Malware-Prozess wechseln.' },
+
+    { id:'sec2', cat:'sec', sev:'Kritisch', title:'Kompromittiertes Benutzerkonto (Account Takeover)',
+      trigger:'SIEM oder Nutzer meldet: Login von unbekanntem Ort, unerwartete Aktionen im Konto.',
+      immediate:R(COLS4,[
+        ['Sperren','Konto sofort sperren','SOC-Analyst','5 Min.'],
+        ['Sitzungen beenden','Aktive Sitzungen/Tokens widerrufen','SOC-Analyst','10 Min.'],
+        ['Eskalieren','P1-Incident eröffnen, CISO informieren','Diensthabender','5 Min.'],
+        ['Kontaktieren','Betroffenen Nutzer über verifizierten Kanal kontaktieren','SOC-Analyst','15 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Aktivität prüfen','Kontoaktivität der letzten 30 Tage prüfen','SOC-Analyst','20 Min.'],
+        ['Regeln prüfen','Geteilte Daten/E-Mail-Regeln prüfen','SOC-Analyst','20 Min.'],
+        ['Ursprung ermitteln','Ausgangspunkt der Kompromittierung ermitteln','SOC-Analyst','variabel']
+      ]),
+      resolution:R(COLS4,[
+        ['Zurücksetzen','Passwort und MFA-Methoden zurücksetzen','IT-Security','15 Min.'],
+        ['Regeln entfernen','Verdächtige Weiterleitungsregeln entfernen','IT-Security','10 Min.'],
+        ['Systeme prüfen','Nachgelagerte Systeme prüfen/absichern','IT-Security','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Freigeben','Konto nach Absicherung kontrolliert freigeben','IT-Security','10 Min.'],
+        ['Schulen','Nutzer zu Sicherheitsbewusstsein schulen','Security-Awareness-Team','variabel']
+      ]),
+      communication:R(COLS3C,[
+        ['Betroffener Nutzer','Persönlich/Telefon','Konto abgesichert, bitte Passwort ändern und Aktivitäten prüfen.'],
+        ['Datenschutzbeauftragter','E-Mail','Prüfung auf meldepflichtigen Vorfall gemäß Art. 33 DSGVO.']
+      ]),
+      note:'Bei Hinweisen auf Datenabfluss zusätzlich den Ransomware/Malware-Prozess prüfen.' },
+
+    { id:'sec3', cat:'sec', sev:'Kritisch', title:'Datenleck / Data Exfiltration Verdacht',
+      trigger:'DLP-Alarm: ungewöhnlich große Datenmenge wird nach extern übertragen.',
+      immediate:R(COLS4,[
+        ['Isolieren','Betroffenes Konto/System identifizieren und isolieren','SOC-Analyst','10 Min.'],
+        ['Unterbinden','Datenübertragung technisch unterbinden','SOC-Analyst','10 Min.'],
+        ['Krisenteam','CISO, Rechtsabteilung, Geschäftsführung aktivieren','Diensthabender','15 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Umfang ermitteln','Art und Umfang der Daten ermitteln','SOC-Analyst/Forensik','variabel'],
+        ['Zeitraum rekonstruieren','Zeitpunkt und Dauer rekonstruieren','Forensik','variabel'],
+        ['Betroffene ermitteln','Betroffene Personen/Kunden identifizieren','Datenschutzbeauftragter','variabel']
+      ]),
+      resolution:R(COLS4,[
+        ['Schwachstelle schließen','Zugangsweg/Schwachstelle schließen','IT-Security','variabel'],
+        ['Zurücksetzen','Betroffene Zugangsdaten/Zertifikate zurücksetzen','IT-Security','30 Min.'],
+        ['Forensik hinzuziehen','Externe Unterstützung falls nötig einbinden','CISO','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Freigeben','Systeme nach Bereinigung freigeben','Ops-Team','variabel'],
+        ['Monitoring','Verstärktes Monitoring für 90 Tage','SOC-Analyst','90 Tage']
+      ]),
+      communication:R(COLS3C,[
+        ['Geschäftsführung/Recht','Krisensitzung','Bewertung Meldepflicht und Kommunikationsstrategie.'],
+        ['Aufsichtsbehörde','Offizielle Meldung','Meldung gemäß Art. 33 DSGVO innerhalb 72h falls erforderlich.'],
+        ['Betroffene Kunden','Offizielles Schreiben','Information gemäß Art. 34 DSGVO falls hohes Risiko besteht.']
+      ]),
+      note:'Vorfall zwingend mit Rechtsabteilung/Datenschutzbeauftragtem abstimmen, bevor extern kommuniziert wird.' },
+
+    { id:'sec4', cat:'sec', sev:'Hoch', title:'DDoS-Angriff auf öffentliche Dienste',
+      trigger:'Monitoring-Alarm: massiver Anstieg eingehenden Traffics, Dienst nicht erreichbar.',
+      immediate:R(COLS4,[
+        ['Verifizieren','Angriff anhand Traffic-Muster bestätigen','Netzwerkteam','10 Min.'],
+        ['Schutz aktivieren','DDoS-Schutzdienst/Scrubbing-Center aktivieren','Netzwerkteam','15 Min.'],
+        ['Eskalieren','Security-Incident eröffnen','Diensthabender','5 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Vektor identifizieren','Volumetrisch oder Applikationsebene bestimmen','Netzwerkteam','20 Min.'],
+        ['Auswirkung prüfen','Betroffene Dienste/Kundenauswirkung bestimmen','Netzwerkteam','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Filtern','Traffic-Filterregeln/Rate-Limiting anpassen','Netzwerkteam','20 Min.'],
+        ['Umleiten','Traffic über CDN/Scrubbing umleiten','Netzwerkteam','20 Min.'],
+        ['Koordinieren','Mit Provider/ISP zur Mitigation abstimmen','Netzwerkteam','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Normalisierung des Traffics prüfen','Netzwerkteam','15 Min.'],
+        ['Aktiv halten','Schutzmaßnahmen 48 Std. aktiv halten','Netzwerkteam','48 Std.']
+      ]),
+      communication:R(COLS3C,[
+        ['Kunden','Status-Page','Wir erleben aktuell erhöhte Netzwerklast, Gegenmaßnahmen sind aktiv.'],
+        ['IT-Leitung','Kurzbericht','DDoS-Angriff erkannt und mitigiert, Ausfallzeit dokumentiert.']
+      ]),
+      note:'DDoS-Schutzkonzept und Kapazitätsreserven jährlich überprüfen.' },
+
+    { id:'sec5', cat:'sec', sev:'Kritisch', title:'Verdächtige Rechteausweitung im Active Directory',
+      trigger:'SIEM-Alarm: unerwartete Hinzufügung zu privilegierter Gruppe (z. B. Domain Admins).',
+      immediate:R(COLS4,[
+        ['Verifizieren','Änderung verifizieren, Konto identifizieren','SOC-Analyst','10 Min.'],
+        ['Entfernen','Konto vorsorglich aus Gruppe entfernen','SOC-Analyst','10 Min.'],
+        ['Eskalieren','P1-Incident eröffnen, CISO informieren','Diensthabender','5 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Audit prüfen','Audit-Logs zur Änderung analysieren','SOC-Analyst','20 Min.'],
+        ['Weitere Änderungen prüfen','Weitere Domänenänderungen im Zeitraum prüfen','SOC-Analyst','20 Min.'],
+        ['Ursprung ermitteln','Herkunft der Kompromittierung ermitteln','Forensik','variabel']
+      ]),
+      resolution:R(COLS4,[
+        ['Zurücksetzen','Kompromittierte Konten zurücksetzen/sperren','IT-Security','15 Min.'],
+        ['Bereinigen','Berechtigungskonzept/Gruppen bereinigen','IT-Security','variabel'],
+        ['Tiering prüfen','Tiering-Modell/PAW für Admin-Zugänge prüfen','IT-Security','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Verifizieren','Domänenintegrität mit Tools prüfen','IT-Security','variabel'],
+        ['Monitoring','Verstärktes Monitoring privilegierter Gruppen','SOC-Analyst','30 Tage']
+      ]),
+      communication:R(COLS3C,[
+        ['IT-Leitung/CISO','Krisensitzung','Unautorisierte Rechteausweitung erkannt und eingedämmt.']
+      ]),
+      note:'Least-Privilege-Prinzip und regelmäßige Rezertifizierung privilegierter Konten einführen.' },
+
+    { id:'sec6', cat:'sec', sev:'Mittel', title:'Verstoß gegen Sicherheitsrichtlinie durch Mitarbeiter',
+      trigger:'DLP/Monitoring-Alarm oder Meldung: Verstoß gegen IT-Sicherheitsrichtlinie.',
+      immediate:R(COLS4,[
+        ['Verifizieren','Meldung/Alarm verifizieren','SOC-Analyst','15 Min.'],
+        ['Eingrenzen','Betroffene Daten und Ausmaß eingrenzen','SOC-Analyst','15 Min.'],
+        ['Informieren','HR und Vorgesetzten informieren','IT-Security','15 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Protokolle prüfen','Zugriffs-/Übertragungsprotokolle prüfen','SOC-Analyst','20 Min.'],
+        ['Einschätzen','Vorsatz vs. Versehen einschätzen (mit HR)','IT-Security/HR','variabel']
+      ]),
+      resolution:R(COLS4,[
+        ['Löschen','Unautorisiert gespeicherte Daten dokumentiert löschen','IT-Security','variabel'],
+        ['Rechte anpassen','Zugriffsrechte gemäß Richtlinie anpassen','IT-Security','15 Min.'],
+        ['HR-Prozess','Disziplinarisches Vorgehen gemäß HR-Prozess','HR','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Prüfen','Systeme/Konten auf Konformität prüfen','IT-Security','15 Min.'],
+        ['Schulen','Schulung zu Sicherheitsrichtlinien anstoßen','Security-Awareness-Team','variabel']
+      ]),
+      communication:R(COLS3C,[
+        ['HR/Vorgesetzter','Vertrauliches Gespräch','Verstoß dokumentiert, weiteres Vorgehen gemäß HR-Prozess.']
+      ]),
+      note:'Regelmäßige Security-Awareness-Schulungen reduzieren Richtlinienverstöße nachhaltig.' },
+
+    // ---------------- Ransomware/Malware-Verdacht ----------------
+    { id:'ran1', cat:'ran', sev:'Hoch', title:'Phishing-Link angeklickt (ohne Passworteingabe)',
+      trigger:'Mitarbeiter meldet: verdächtigen Link in E-Mail angeklickt, keine Daten eingegeben.',
+      immediate:R(COLS4,[
+        ['Trennen','Gerät sofort vom Netzwerk trennen (LAN/WLAN aus)','Mitarbeiter/Service Desk','2 Min.'],
+        ['Melden','Meldung über 24/7-Security-Hotline','Service Desk','5 Min.'],
+        ['Isolieren','Gerät in Quarantäne-VLAN isolieren','SOC-Analyst','10 Min.'],
+        ['Sichern','URL/E-Mail für Analyse sichern','SOC-Analyst','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Analysieren','URL/Anhang in Sandbox analysieren','SOC-Analyst','20 Min.'],
+        ['Scannen','Endgerät auf Malware-Infektion scannen','SOC-Analyst','20 Min.'],
+        ['Streuung prüfen','Weitere Empfänger derselben E-Mail prüfen','SOC-Analyst','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Blockieren','Schadhafte URL/Absender unternehmensweit blockieren','SOC-Analyst','15 Min.'],
+        ['Bereinigen','Gerät bereinigen oder neu aufsetzen','IT-Security','variabel'],
+        ['Entfernen','Phishing-Mail bei allen Empfängern entfernen','Ops-Team','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Freigeben','Gerät nach Freigabe wieder ins Netzwerk aufnehmen','IT-Security','10 Min.'],
+        ['Feedback geben','Mitarbeiter sanktionsfrei informieren','Security-Awareness-Team','15 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Alle Mitarbeiter','E-Mail-Warnung','Aktuelle Phishing-Welle erkannt, bitte nicht auf [Betreff] klicken.'],
+        ['IT-Leitung','Kurzbericht','Phishing-Versuch erkannt, kein Datenverlust, Gerät geprüft.']
+      ]),
+      note:'Schnelles, sanktionsfreies Melden fördern – der wichtigste Schutzfaktor gegen Ransomware.' },
+
+    { id:'ran2', cat:'ran', sev:'Kritisch', title:'Zugangsdaten auf Phishing-Seite eingegeben',
+      trigger:'Mitarbeiter meldet: Benutzername/Passwort auf gefälschter Login-Seite eingegeben.',
+      immediate:R(COLS4,[
+        ['Sperren','Betroffenes Konto sofort zentral sperren','SOC-Analyst','3 Min.'],
+        ['Trennen','Gerät vom Netzwerk trennen (Quarantäne)','Mitarbeiter/Service Desk','5 Min.'],
+        ['Widerrufen','Alle aktiven Sitzungen/Tokens widerrufen','SOC-Analyst','10 Min.'],
+        ['Eskalieren','P1-Incident eröffnen, CISO informieren','SOC-Analyst','5 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Aktivität prüfen','Kontoaktivität der letzten 48 Std. prüfen','SOC-Analyst','30 Min.'],
+        ['Passwort-Reuse prüfen','Weitere Systeme mit denselben Zugangsdaten prüfen','SOC-Analyst','20 Min.'],
+        ['Kampagne prüfen','Phishing-Kampagne auf weitere Empfänger prüfen','SOC-Analyst','20 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Zurücksetzen','Passwort und alle MFA-Faktoren zurücksetzen','IT-Security','15 Min.'],
+        ['Bereinigen','Verdächtige Postfachregeln/App-Rechte entfernen','IT-Security','15 Min.'],
+        ['Blockieren','Phishing-Domain blockieren und melden','SOC-Analyst','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Freigeben','Konto nach vollständiger Prüfung freigeben','IT-Security','10 Min.'],
+        ['Monitoring','Verstärktes Monitoring für 30 Tage','SOC-Analyst','30 Tage']
+      ]),
+      communication:R(COLS3C,[
+        ['Betroffener Mitarbeiter','Persönlich','Konto abgesichert, bitte neues Passwort setzen, keine Sanktion.'],
+        ['Datenschutzbeauftragter','E-Mail','Prüfung auf meldepflichtigen Vorfall gemäß Art. 33 DSGVO.'],
+        ['IT-Leitung','Kurzbericht','Credential-Kompromittierung eingedämmt, Monitoring aktiv.']
+      ]),
+      note:'MFA ist die wirksamste Einzelmaßnahme gegen missbrauchte Zugangsdaten – Durchsetzung unternehmensweit prüfen.' },
+
+    { id:'ran3', cat:'ran', sev:'Kritisch', title:'Ransomware-Verschlüsselung entdeckt',
+      trigger:'Meldung/Monitoring: Dateien umbenannt/verschlüsselt, Lösegeldforderung sichtbar.',
+      immediate:R(COLS4,[
+        ['Isolieren','Gerät SOFORT vom Netzwerk trennen, NICHT herunterfahren','Mitarbeiter','1 Min.'],
+        ['Segmentieren','Betroffene Netzwerksegmente isolieren','SOC-Analyst','10 Min.'],
+        ['Krisenteam','CISO, IT-Leitung, Geschäftsführung sofort aktivieren','Diensthabender','10 Min.'],
+        ['Backups trennen','Backups vom Netzwerk trennen/schreibschützen','Backup-Admin','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Variante identifizieren','Ransomware-Variante anhand Ransom Note bestimmen','Forensik/SOC-Analyst','variabel'],
+        ['Patient Zero ermitteln','Infektionsweg und Ursprung ermitteln','Forensik','variabel'],
+        ['Ausmaß kartieren','Betroffene Systeme kartieren','SOC-Analyst','variabel']
+      ]),
+      resolution:R(COLS4,[
+        ['Forensik einbinden','Externen IR-Dienstleister hinzuziehen','CISO','variabel'],
+        ['Bereinigen','Systeme isoliert bereinigen oder neu aufsetzen','IT-Security','variabel'],
+        ['Zurücksetzen','Zugangsdaten unternehmensweit zurücksetzen','IT-Security','variabel']
+      ]),
+      recovery:R(COLS4,[
+        ['Wiederherstellen','Wiederherstellung nur aus verifizierten, sauberen Backups','Backup-Admin','variabel'],
+        ['Schrittweise starten','Systeme segmentiert wieder in Betrieb nehmen','Ops-Team','variabel'],
+        ['Monitoring','Verstärktes Monitoring für 90 Tage','SOC-Analyst','90 Tage']
+      ]),
+      communication:R(COLS3C,[
+        ['Geschäftsführung/Krisenstab','Krisensitzung (mehrmals täglich)','Lagebericht, KEIN Lösegeld ohne Rechtsberatung zahlen.'],
+        ['Cyber-Versicherung','Meldung','Schadensfall gemäß Police melden.'],
+        ['Behörden (BSI/LKA)','Offizielle Meldung','Anzeige erstatten, Unterstützung anfordern.']
+      ]),
+      note:'Niemals eigenständig Lösegeld zahlen oder mit Angreifern kommunizieren ohne Freigabe der Geschäftsführung/Rechtsberatung/Behörden.' },
+
+    { id:'ran4', cat:'ran', sev:'Hoch', title:'Malware durch Antivirus erkannt, nicht automatisch entfernt',
+      trigger:'EDR/Antivirus-Alarm: Schadsoftware erkannt, Quarantäne fehlgeschlagen oder Datei aktiv.',
+      immediate:R(COLS4,[
+        ['Isolieren','Gerät vom Netzwerk isolieren','SOC-Analyst','5 Min.'],
+        ['Sichern','Alarmdetails (Name, Pfad, Prozess) sichern','SOC-Analyst','10 Min.'],
+        ['Ticket eröffnen','Security-Ticket mit hoher Priorität eröffnen','SOC-Analyst','5 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Recherchieren','Malware-Typ und Verhalten recherchieren','SOC-Analyst','20 Min.'],
+        ['Persistenz prüfen','Autostart/geplante Tasks prüfen','SOC-Analyst','20 Min.'],
+        ['Ausbreitung prüfen','Weitere betroffene Systeme prüfen','SOC-Analyst','20 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Entfernen','Schadsoftware manuell entfernen oder neu aufsetzen','IT-Security','variabel'],
+        ['Zurücksetzen','Zugangsdaten des Geräts zurücksetzen','IT-Security','15 Min.'],
+        ['Aktualisieren','AV/EDR-Signaturen und Regeln aktualisieren','IT-Security','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Scannen','Vollständigen Scan nach Bereinigung durchführen','IT-Security','30 Min.'],
+        ['Freigeben','Gerät wieder ins Netzwerk aufnehmen','IT-Security','10 Min.'],
+        ['Monitoring','14 Tage verstärktes Monitoring','SOC-Analyst','14 Tage']
+      ]),
+      communication:R(COLS3C,[
+        ['Betroffener Nutzer','Telefon','Schadsoftware entfernt, bitte auf ungewöhnliches Verhalten achten.'],
+        ['IT-Leitung','Kurzbericht','Malware-Fund isoliert und bereinigt, keine Ausbreitung festgestellt.']
+      ]),
+      note:'Bei Verschlüsselungsindikatoren sofort in den Ransomware-Prozess (ran3) wechseln.' },
+
+    { id:'ran5', cat:'ran', sev:'Hoch', title:'Verdächtiger E-Mail-Anhang geöffnet',
+      trigger:'Mitarbeiter meldet: Office-Dokument/ZIP-Anhang geöffnet, Makro-Warnung aktiviert.',
+      immediate:R(COLS4,[
+        ['Trennen','Gerät sofort vom Netzwerk trennen','Mitarbeiter','2 Min.'],
+        ['Melden','Meldung an Security-Hotline','Mitarbeiter','5 Min.'],
+        ['Isolieren','Gerät in Quarantäne-VLAN isolieren','SOC-Analyst','10 Min.'],
+        ['Sichern','Anhang und E-Mail-Header sichern','SOC-Analyst','10 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Analysieren','Anhang in Sandbox analysieren','SOC-Analyst','20 Min.'],
+        ['Prüfen','Ausgeführte Makros/Netzwerkverbindungen prüfen','SOC-Analyst','20 Min.'],
+        ['Empfänger prüfen','Weitere Empfänger derselben E-Mail identifizieren','SOC-Analyst','15 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Entfernen','Schadhafte Datei/Prozess entfernen','IT-Security','variabel'],
+        ['Blockieren','Absender/Hash unternehmensweit blockieren','SOC-Analyst','15 Min.'],
+        ['Zurückrufen','E-Mail bei allen Empfängern zurückrufen','Ops-Team','15 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Freigeben','Gerät nach vollständigem Scan freigeben','IT-Security','15 Min.'],
+        ['Dokumentieren','Feedback und Lerneffekt dokumentieren','Security-Awareness-Team','10 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Alle Mitarbeiter','E-Mail-Warnung','Bitte keine Anhänge von [Absender] öffnen, Meldung an Hotline.']
+      ]),
+      note:'Makros unternehmensweit standardmäßig deaktivieren, um dieses Risiko strukturell zu senken.' },
+
+    { id:'ran6', cat:'ran', sev:'Mittel', title:'USB-Stick mit Malware angeschlossen',
+      trigger:'EDR-Alarm oder Meldung: unbekannter USB-Stick angeschlossen, Autorun-Aktivität erkannt.',
+      immediate:R(COLS4,[
+        ['Entfernen','USB-Gerät sofort physisch entfernen','Mitarbeiter','1 Min.'],
+        ['Isolieren','Gerät vom Netzwerk isolieren','Mitarbeiter/Service Desk','5 Min.'],
+        ['Melden','Vorfall an Security-Hotline melden','Mitarbeiter','5 Min.']
+      ]),
+      diagnosis:R(COLS4,[
+        ['Prüfen','USB-Gerät in isolierter Umgebung analysieren','SOC-Analyst','20 Min.'],
+        ['Scannen','Endgerät auf Infektion scannen','SOC-Analyst','20 Min.'],
+        ['Herkunft klären','Ursprung des USB-Sticks klären','Service Desk','10 Min.']
+      ]),
+      resolution:R(COLS4,[
+        ['Entfernen','Schadsoftware vom Endgerät entfernen','IT-Security','variabel'],
+        ['Richtlinie prüfen','USB-Port-/Device-Control-Regeln prüfen','IT-Security','20 Min.']
+      ]),
+      recovery:R(COLS4,[
+        ['Freigeben','Gerät nach Bereinigung freigeben','IT-Security','10 Min.'],
+        ['Sensibilisieren','Mitarbeiter zu Wechseldatenträgern schulen','Security-Awareness-Team','15 Min.']
+      ]),
+      communication:R(COLS3C,[
+        ['Alle Mitarbeiter','Kurzhinweis','Bitte keine unbekannten USB-Geräte anschließen, Richtlinie beachten.']
+      ]),
+      note:'USB-Port-Kontrolle (Device Control) unternehmensweit als präventive Maßnahme einführen.' }
+  ];
+
+  // ================= STATE =================
+  var currentMode = 'playbook'; // 'playbook' | 'runbook'
+  var currentCatFilter = 'all';
+  var currentSearch = '';
+  var currentScenarioId = null;
+
+  // ================= HOME =================
+  document.querySelectorAll('.type-card').forEach(function(card){
+    card.addEventListener('click', function(){
+      currentMode = card.dataset.mode;
+      showScreen('list');
+      renderModeUI();
+      renderCatTabs();
+      renderCardGrid();
+    });
+  });
+  document.getElementById('btnHomeFromList').addEventListener('click', function(){ showScreen('home'); });
+
+  // ================= MODE TOGGLE (on list screen) =================
+  document.getElementById('toggleP').addEventListener('click', function(){ currentMode='playbook'; renderModeUI(); });
+  document.getElementById('toggleR').addEventListener('click', function(){ currentMode='runbook'; renderModeUI(); });
+  function renderModeUI(){
+    document.getElementById('toggleP').classList.toggle('active', currentMode === 'playbook');
+    document.getElementById('toggleR').classList.toggle('active', currentMode === 'runbook');
+    var label = currentMode === 'playbook' ? 'Playbook' : 'Runbook';
+    document.getElementById('modeLabel').textContent = label;
+    document.getElementById('modeLabelDetail').textContent = label;
+  }
+
+  // ================= CATEGORY TABS =================
+  function renderCatTabs(){
+    var container = document.getElementById('catTabs');
+    var html = '<div class="cat-tab' + (currentCatFilter==='all'?' active':'') + '" data-cat="all" style="' + (currentCatFilter==='all' ? 'background:#3b82f6' : '') + '">Alle (30)</div>';
+    Object.keys(CATS).forEach(function(key){
+      var count = SCENARIOS.filter(function(s){ return s.cat === key; }).length;
+      var isActive = currentCatFilter === key;
+      html += '<div class="cat-tab' + (isActive?' active':'') + '" data-cat="'+key+'" style="' + (isActive ? 'background:'+CATS[key].color : '') + '">' + CATS[key].label + ' (' + count + ')</div>';
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('.cat-tab').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        currentCatFilter = tab.dataset.cat;
+        renderCatTabs();
+        renderCardGrid();
+      });
+    });
+  }
+
+  document.getElementById('searchBox').addEventListener('input', function(e){
+    currentSearch = e.target.value.toLowerCase();
+    renderCardGrid();
+  });
+
+  // ================= CARD GRID =================
+  function renderCardGrid(){
+    var grid = document.getElementById('cardGrid');
+    var list = SCENARIOS.filter(function(s){
+      var matchCat = currentCatFilter === 'all' || s.cat === currentCatFilter;
+      var matchSearch = !currentSearch || s.title.toLowerCase().indexOf(currentSearch) > -1 || s.trigger.toLowerCase().indexOf(currentSearch) > -1;
+      return matchCat && matchSearch;
+    });
+    if(!list.length){
+      grid.innerHTML = '<div class="empty-state">Keine Szenarien gefunden.</div>';
+      return;
+    }
+    var html = '';
+    list.forEach(function(s){
+      var cat = CATS[s.cat];
+      html += '<div class="scenario-card" data-id="'+s.id+'">';
+      html += '<div class="card-top">';
+      html += '<span class="cat-badge" style="background:'+cat.color+'">'+cat.label+'</span>';
+      html += '<span class="sev-badge sev-'+s.sev+'">'+s.sev+'</span>';
+      html += '</div>';
+      html += '<h4>'+esc(s.title)+'</h4>';
+      html += '<div class="trigger">'+esc(s.trigger)+'</div>';
+      html += '<div class="go">Details anzeigen →</div>';
+      html += '</div>';
+    });
+    grid.innerHTML = html;
+    grid.querySelectorAll('.scenario-card').forEach(function(card){
+      card.addEventListener('click', function(){
+        currentScenarioId = card.dataset.id;
+        renderModeUI();
+        renderDetail();
+        showScreen('detail');
+      });
+    });
+  }
+
+  document.getElementById('btnBackToList').addEventListener('click', function(){ showScreen('list'); });
+
+  // ================= DETAIL RENDER =================
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function renderStepTable(num, title, rows, detailed){
+    var html = '<h2 class="doc-h2"><span class="step-num" style="background:#1f2937;color:#fff;">'+num+'</span> ' + title + '</h2>';
+    if(!rows.length){ return html; }
+    if(detailed){
+      html += '<table class="doc-table"><thead><tr><th>Schritt</th><th>Beschreibung / Befehl</th><th>Verantwortlich</th><th>Dauer/SLA</th></tr></thead><tbody>';
+      rows.forEach(function(r,i){
+        html += '<tr><td><span class="step-num">'+(i+1)+'</span>'+esc(r.step)+'</td><td>'+esc(r.description)+'</td><td>'+esc(r.responsible)+'</td><td>'+esc(r.duration)+'</td></tr>';
+      });
+    } else {
+      html += '<table class="doc-table"><thead><tr><th>Schritt</th><th>Verantwortlich</th></tr></thead><tbody>';
+      rows.forEach(function(r,i){
+        html += '<tr><td><span class="step-num">'+(i+1)+'</span>'+esc(r.step)+'</td><td>'+esc(r.responsible)+'</td></tr>';
+      });
+    }
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function renderDetail(){
+    var s = SCENARIOS.find(function(x){ return x.id === currentScenarioId; });
+    if(!s) return;
+    var cat = CATS[s.cat];
+    var esca = ESCALATION[s.cat];
+    var detailed = currentMode === 'runbook';
+    var docType = detailed ? 'Runbook' : 'Playbook';
+
+    var html = '';
+    html += '<h1 class="doc-title">'+docType+': '+esc(s.title)+'</h1>';
+    html += '<div class="doc-sub">'+esc(cat.label)+' &middot; '+esc(cat.sub)+' &middot; Stand: '+new Date().toLocaleDateString('de-DE')+'</div>';
+
+    html += '<div class="meta-grid">';
+    html += '<div><b>Kategorie:</b> '+esc(cat.label)+'</div>';
+    html += '<div><b>Schweregrad:</b> '+esc(s.sev)+'</div>';
+    html += '<div><b>Dokumenttyp:</b> '+docType+'</div>';
+    html += '<div><b>Szenario-ID:</b> '+esc(s.id.toUpperCase())+'</div>';
+    html += '</div>';
+
+    html += '<div class="trigger-box"><b>Auslöser / Erkennung:</b><br>'+esc(s.trigger)+'</div>';
+
+    html += '<h2 class="doc-h2">📈 Eskalationsmatrix</h2>';
+    html += '<table class="doc-table esc-table"><thead><tr><th>Stufe</th><th>Zeit</th><th>Rolle / Verantwortlich</th><th>Kontakt</th></tr></thead><tbody>';
+    esca.forEach(function(r){
+      html += '<tr><td>'+esc(r.level)+'</td><td>'+esc(r.time)+'</td><td>'+esc(r.role)+'</td><td>'+esc(r.contact)+'</td></tr>';
+    });
+    html += '</tbody></table>';
+
+    html += renderStepTable(1, 'Sofortmaßnahmen', s.immediate, detailed);
+    html += renderStepTable(2, 'Diagnose / Analyse', s.diagnosis, detailed);
+
+    html += '<h2 class="doc-h2">📢 Kommunikationsplan</h2>';
+    html += '<table class="doc-table"><thead><tr><th>Zielgruppe</th><th>Kanal</th><th>Nachricht / Vorlage</th></tr></thead><tbody>';
+    s.communication.forEach(function(r){
+      html += '<tr><td>'+esc(r.audience)+'</td><td>'+esc(r.channel)+'</td><td>'+esc(r.message)+'</td></tr>';
+    });
+    html += '</tbody></table>';
+
+    html += renderStepTable(3, 'Behebung (Resolution)', s.resolution, detailed);
+    html += renderStepTable(4, 'Wiederherstellung / Recovery', s.recovery, detailed);
+
+    html += '<h2 class="doc-h2">📝 Hinweis zur Nachbereitung</h2>';
+    html += '<div class="note-box">'+esc(s.note)+'</div>';
+
+    html += '<div class="footer-note">Erstellt mit dem Playbook &amp; Runbook Generator &middot; '+new Date().toLocaleString('de-DE')+' &middot; Angemeldet als '+esc(CREDENTIALS.user)+'</div>';
+
+    document.getElementById('doc').innerHTML = html;
+  }
+
+  document.getElementById('btnPrint').addEventListener('click', function(){ window.print(); });
+
+  document.getElementById('btnExportHtml').addEventListener('click', function(){
+    var s = SCENARIOS.find(function(x){ return x.id === currentScenarioId; });
+    if(!s) return;
+    var docHtml = document.getElementById('doc').innerHTML;
+    var docStyles = document.querySelector('style').innerHTML.split('@media print')[0];
+    var full = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>'+esc(s.title)+'</title>' +
+      '<style>body{background:#fff;margin:0;padding:40px;font-family:"Segoe UI",Arial,sans-serif;} #doc{max-width:900px;margin:0 auto;box-shadow:none;} ' + docStyles + '</style>' +
+      '</head><body><div id="doc">'+docHtml+'</div></body></html>';
+    var blob = new Blob([full], {type:'text/html'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var name = (s.id + '_' + s.title).replace(/[^a-z0-9äöüß\-_ ]/gi,'').trim().replace(/\s+/g,'_');
+    a.href = url; a.download = name + '.html';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // ================= INIT =================
+  if(isLoggedIn()){
+    showScreen('home');
+  } else {
+    showScreen('login');
+  }
+
+})();
+</script>
+</body>
+</html>
