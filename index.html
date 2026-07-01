@@ -299,9 +299,21 @@
     body{ background:#fff; }
     #doc{ box-shadow:none; border:none; max-width:none; padding:0; border-radius:0; }
   }
+
+  .voice-toast{
+    position:fixed; left:50%; bottom:24px; transform:translate(-50%, 20px);
+    background:var(--panel-3); border:1px solid var(--border); color:var(--text);
+    padding:10px 18px; border-radius:20px; font-size:12.5px; font-weight:600;
+    box-shadow:var(--shadow-md); opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
+    z-index:100; max-width:90vw; text-align:center;
+  }
+  .voice-toast.show{ opacity:1; transform:translate(-50%, 0); }
+  .voice-toast.error{ background:rgba(245,69,92,.15); border-color:var(--danger); color:#fca5b1; }
 </style>
 </head>
 <body>
+
+<div class="voice-toast" id="voiceToast"></div>
 
 <!-- ================= LOGIN ================= -->
 <div class="screen" id="screen-login">
@@ -1393,6 +1405,8 @@
     playbook: 'In der IT sind Playbooks standardisierte Handlungsanweisungen oder automatisierte Workflows. Sie definieren Schritt für Schritt, wie Teams auf bestimmte Situationen, zum Beispiel Cyberangriffe, Systemausfälle oder wiederkehrende administrative Aufgaben, reagieren sollen. Sie dienen dazu, Prozesse zu beschleunigen, Fehler unter Stress zu minimieren und menschliches Wissen teamweit verfügbar zu machen.'
   };
   var cachedVoices = [];
+  var currentUtterance = null; // keep a strong reference so Chrome doesn't garbage-collect mid-speech
+  var keepAliveTimer = null;
   function refreshVoices(){
     if('speechSynthesis' in window){ cachedVoices = window.speechSynthesis.getVoices(); }
   }
@@ -1411,16 +1425,43 @@
     });
     return match || (german.length ? german[0] : null);
   }
+  function showVoiceToast(msg, isError){
+    var el = document.getElementById('voiceToast');
+    if(!el) return;
+    el.textContent = msg;
+    el.classList.toggle('error', !!isError);
+    el.classList.add('show');
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(function(){ el.classList.remove('show'); }, isError ? 6000 : 4000);
+  }
   function speakExplanation(mode){
-    if(!('speechSynthesis' in window)) return;
+    if(!('speechSynthesis' in window)){
+      showVoiceToast('Sprachausgabe wird von diesem Browser nicht unterstützt.', true);
+      return;
+    }
+    clearInterval(keepAliveTimer);
     window.speechSynthesis.cancel();
-    var utter = new SpeechSynthesisUtterance(VOICE_TEXT[mode]);
-    utter.lang = 'de-DE';
-    utter.pitch = 1;
-    utter.rate = 1;
-    var voice = pickFemaleGermanVoice();
-    if(voice) utter.voice = voice;
-    window.speechSynthesis.speak(utter);
+    // Chrome kann speak() direkt nach cancel() im selben Tick verschlucken – kurze Verzögerung umgeht das.
+    setTimeout(function(){
+      refreshVoices();
+      var utter = new SpeechSynthesisUtterance(VOICE_TEXT[mode]);
+      utter.lang = 'de-DE';
+      utter.pitch = 1;
+      utter.rate = 1;
+      var voice = pickFemaleGermanVoice();
+      if(voice) utter.voice = voice;
+      utter.onstart = function(){ showVoiceToast('🔊 Sprachausgabe läuft (' + (voice ? voice.name : 'Standardstimme') + ')…'); };
+      utter.onerror = function(e){ showVoiceToast('Sprachausgabe-Fehler: ' + e.error, true); clearInterval(keepAliveTimer); };
+      utter.onend = function(){ clearInterval(keepAliveTimer); };
+      currentUtterance = utter;
+      window.speechSynthesis.speak(utter);
+      // Chrome pausiert lange Sprachausgaben nach ca. 15s von selbst – dieser Trick hält sie am Laufen.
+      keepAliveTimer = setInterval(function(){
+        if(!window.speechSynthesis.speaking){ clearInterval(keepAliveTimer); return; }
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }, 4000);
+    }, 60);
   }
 
   // ================= HOME =================
