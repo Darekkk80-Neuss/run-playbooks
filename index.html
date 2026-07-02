@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Die üblichen Verdächtigen – Run &amp; Playbooks</title>
+<title>Die üblichen Verdächtigen – SDM Dashboard</title>
 <style>
   :root{
     --bg:#0a0e1a;
@@ -169,10 +169,22 @@
   .hero p{ color:var(--text-dim); font-size:14.5px; max-width:580px; margin:0 auto; line-height:1.6; }
   .type-grid{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:repeat(3, 1fr);
     gap:20px;
-    max-width:780px;
+    max-width:1100px;
     margin:36px auto 0;
+    align-items:stretch;
+  }
+  .type-col{ display:flex; flex-direction:column; gap:14px; }
+  .type-col .type-card{ flex:1; }
+  .type-note{
+    border:1.5px solid rgba(255,255,255,.45);
+    border-radius:var(--radius-sm);
+    background:rgba(255,255,255,.05);
+    padding:14px 16px;
+    color:#fff;
+    font-size:12.5px;
+    line-height:1.6;
   }
   .type-card{
     background:linear-gradient(180deg, var(--panel-2), var(--panel));
@@ -249,71 +261,100 @@
   .empty-state{ text-align:center; color:var(--text-dim); padding:50px 0; font-size:14px; }
 
   /* ---------- Detail screen ---------- */
-  #doc{
+  .doc-page{
     background:#fff; color:#1a1f2b; max-width:920px; margin:0 auto;
     padding:40px 40px; border-radius:14px; box-shadow:var(--shadow-lg);
     line-height:1.55; font-family:"Inter","Segoe UI",Arial,sans-serif;
   }
-  #doc h1.doc-title{ font-size:25px; margin:0 0 4px; color:#111827; font-weight:800; letter-spacing:-.02em; }
-  #doc .doc-sub{ color:#6b7280; font-size:13px; margin-bottom:18px; font-weight:600; }
-  #doc .meta-grid{
+  .doc-page h1.doc-title{ font-size:25px; margin:0 0 4px; color:#111827; font-weight:800; letter-spacing:-.02em; }
+  .doc-page .doc-sub{ color:#6b7280; font-size:13px; margin-bottom:18px; font-weight:600; }
+  .doc-page .meta-grid{
     display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; font-size:13px;
     background:#f6f7fb; padding:16px 20px; border-radius:12px; margin-bottom:22px; border:1px solid #eceef4;
   }
-  #doc .trigger-box{
+  .doc-page .trigger-box{
     background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:14px 18px;
     font-size:13px; margin-bottom:22px;
   }
-  #doc h2.doc-h2{
+  .doc-page h2.doc-h2{
     font-size:15.5px; border-bottom:2px solid #111827; padding-bottom:6px; margin:28px 0 12px; color:#111827; font-weight:700;
   }
-  #doc table.doc-table{ width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; margin-bottom:8px; border-radius:8px; overflow:hidden; border:1px solid #e5e7eb; }
-  #doc table.doc-table th{ background:#111827; color:#fff; text-align:left; padding:8px 10px; font-weight:600; }
-  #doc table.doc-table td{ border-top:1px solid #e5e7eb; padding:8px 10px; vertical-align:top; }
-  #doc table.doc-table tr:nth-child(even) td{ background:#f9fafb; }
-  #doc .esc-table th{ background:#7f1d1d; }
-  #doc .step-num{
+  .doc-page table.doc-table{ width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; margin-bottom:8px; border-radius:8px; overflow:hidden; border:1px solid #e5e7eb; }
+  .doc-page table.doc-table th{ background:#111827; color:#fff; text-align:left; padding:8px 10px; font-weight:600; }
+  .doc-page table.doc-table td{ border-top:1px solid #e5e7eb; padding:8px 10px; vertical-align:top; }
+  .doc-page table.doc-table tr:nth-child(even) td{ background:#f9fafb; }
+  .doc-page .esc-table th{ background:#7f1d1d; }
+  .doc-page .step-num{
     display:inline-block; width:20px; height:20px; background:#e5e7eb; border-radius:50%;
     text-align:center; font-size:11px; line-height:20px; margin-right:4px; font-weight:600;
   }
-  #doc .note-box{
+  .doc-page .note-box{
     background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:14px 18px; font-size:13px; margin-top:6px;
   }
-  #doc .footer-note{ margin-top:32px; padding-top:14px; border-top:1px solid #e5e7eb; color:#9ca3af; font-size:11px; }
+  .doc-page .footer-note{ margin-top:32px; padding-top:14px; border-top:1px solid #e5e7eb; color:#9ca3af; font-size:11px; }
   .detail-actions{ display:flex; gap:8px; margin:0 auto 18px; max-width:920px; flex-wrap:wrap; }
 
   ::-webkit-scrollbar{ width:10px; height:10px; }
   ::-webkit-scrollbar-track{ background:transparent; }
   ::-webkit-scrollbar-thumb{ background:#2c3555; border-radius:5px; }
 
+  /* ---------- Stellungnahmen-Generator ---------- */
+  .st-panel{
+    background:linear-gradient(180deg, var(--panel-2), var(--panel));
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:28px 26px;
+    max-width:920px;
+    margin:0 auto;
+  }
+  .st-panel h2{ margin:0 0 6px; font-size:20px; font-weight:700; letter-spacing:-.01em; }
+  .st-panel .st-intro{ color:var(--text-dim); font-size:13px; line-height:1.6; margin:0 0 22px; }
+  .st-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 18px; margin-bottom:14px; }
+  .st-field{ display:flex; flex-direction:column; }
+  .st-field.full{ grid-column:1 / -1; }
+  .st-field label{ font-size:12px; color:var(--text-dim); font-weight:600; margin-bottom:5px; }
+  .st-field .req{ color:var(--danger); }
+  .st-panel input[type=text], .st-panel textarea{
+    width:100%; padding:10px 12px;
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm);
+    color:var(--text); font-size:13.5px; resize:vertical;
+    transition:border-color .15s;
+  }
+  .st-panel input[type=text]:focus, .st-panel textarea:focus{ outline:none; border-color:var(--accent); }
+  .st-panel input.invalid, .st-panel textarea.invalid{ border-color:var(--danger); }
+  .st-arg{
+    border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--panel); padding:16px 16px 6px; margin-bottom:14px;
+  }
+  .st-arg h3{ margin:0 0 12px; font-size:13.5px; font-weight:700; }
+  .st-arg h3 span{ color:var(--text-dim); font-weight:600; font-size:12px; }
+  .st-error{ color:var(--danger); font-size:12.5px; min-height:16px; margin:6px 0 10px; }
+  .st-panel .btn-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .doc-page p{ font-size:13.5px; margin:0 0 12px; }
+  .doc-page .sig-block{ margin-top:28px; font-size:13.5px; }
+
+  @media (max-width: 900px){
+    .type-grid{ grid-template-columns:1fr; }
+    .st-grid{ grid-template-columns:1fr; }
+  }
+
   @media (max-width: 640px){
     .type-grid{ grid-template-columns:1fr; }
-    #doc{ padding:24px 18px; }
-    #doc .meta-grid{ grid-template-columns:1fr; }
+    .doc-page{ padding:24px 18px; }
+    .doc-page .meta-grid{ grid-template-columns:1fr; }
     .topbar h1{ font-size:13px; }
     .login-card{ padding:30px 24px; }
   }
 
   @media print{
-    .topbar, .detail-actions, .list-toolbar, .cat-tabs{ display:none !important; }
+    .topbar, .detail-actions, .list-toolbar, .cat-tabs, .st-panel{ display:none !important; }
     body{ background:#fff; }
-    #doc{ box-shadow:none; border:none; max-width:none; padding:0; border-radius:0; }
+    .doc-page{ box-shadow:none; border:none; max-width:none; padding:0; border-radius:0; }
   }
 
-  .voice-toast{
-    position:fixed; left:50%; bottom:24px; transform:translate(-50%, 20px);
-    background:var(--panel-3); border:1px solid var(--border); color:var(--text);
-    padding:10px 18px; border-radius:20px; font-size:12.5px; font-weight:600;
-    box-shadow:var(--shadow-md); opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
-    z-index:100; max-width:90vw; text-align:center;
-  }
-  .voice-toast.show{ opacity:1; transform:translate(-50%, 0); }
-  .voice-toast.error{ background:rgba(245,69,92,.15); border-color:var(--danger); color:#fca5b1; }
 </style>
 </head>
 <body>
-
-<div class="voice-toast" id="voiceToast"></div>
 
 <!-- ================= LOGIN ================= -->
 <div class="screen" id="screen-login">
@@ -372,7 +413,7 @@
   </svg>
   <div class="login-card">
     <div class="brand-row"><span class="brand-icon">🛠️</span></div>
-    <h1>Die üblichen Verdächtigen<br><span class="accent-text">Run &amp; Playbooks</span></h1>
+    <h1>Die üblichen Verdächtigen<br><span class="accent-text">SDM Dashboard</span></h1>
     <div class="sub">IT Service Management &middot; Interner Zugang</div>
     <label>Benutzername</label>
     <input type="text" id="loginUser" autocomplete="username" placeholder="Benutzername">
@@ -387,7 +428,7 @@
 <!-- ================= HOME ================= -->
 <div class="screen" id="screen-home">
   <div class="topbar">
-    <h1><span class="brand-icon">🛠️</span> <span class="brand-text">Die üblichen Verdächtigen <span class="accent-text">Run &amp; Playbooks</span></span> <span class="badge">ITSM</span></h1>
+    <h1><span class="brand-icon">🛠️</span> <span class="brand-text">Die üblichen Verdächtigen <span class="accent-text">SDM Dashboard</span></span> <span class="badge">ITSM</span></h1>
     <div class="right">
       <span class="user-chip" id="userChipHome"></span>
       <button class="small ghost" id="btnLogoutHome">Abmelden</button>
@@ -399,15 +440,29 @@
       <p>Wähle einen Dokumenttyp. Auf der nächsten Seite findest du 30 praxisnahe Best-Practice-Szenarien mit Handlungsschritten und Eskalationsmatrix, gruppiert in 5 Kategorien.</p>
     </div>
     <div class="type-grid">
-      <div class="type-card" data-mode="playbook">
-        <div class="icon">📘</div>
-        <h3>Playbook</h3>
-        <p>Strategisches Entscheidungsdokument für den Krisenstab: Rollen, Eskalationswege und Kommunikation im Vordergrund – für Führungskräfte &amp; Incident Manager.</p>
+      <div class="type-col">
+        <div class="type-card" data-mode="playbook">
+          <div class="icon">📘</div>
+          <h3>Playbook</h3>
+          <p>Strategisches Entscheidungsdokument für den Krisenstab: Rollen, Eskalationswege und Kommunikation im Vordergrund – für Führungskräfte &amp; Incident Manager.</p>
+        </div>
+        <div class="type-note">In der IT sind Playbooks standardisierte Handlungsanweisungen oder automatisierte Workflows. Sie definieren Schritt für Schritt, wie Teams auf bestimmte Situationen, zum Beispiel Cyberangriffe, Systemausfälle oder wiederkehrende administrative Aufgaben, reagieren sollen. Sie dienen dazu, Prozesse zu beschleunigen, Fehler unter Stress zu minimieren und menschliches Wissen teamweit verfügbar zu machen.</div>
       </div>
-      <div class="type-card" data-mode="runbook">
-        <div class="icon">📗</div>
-        <h3>Runbook</h3>
-        <p>Detaillierte technische Schritt-für-Schritt-Anleitung inkl. Tools, Befehlen und Zeitangaben – für Techniker &amp; Diensthabende im operativen Einsatz.</p>
+      <div class="type-col">
+        <div class="type-card" data-mode="runbook">
+          <div class="icon">📗</div>
+          <h3>Runbook</h3>
+          <p>Detaillierte technische Schritt-für-Schritt-Anleitung inkl. Tools, Befehlen und Zeitangaben – für Techniker &amp; Diensthabende im operativen Einsatz.</p>
+        </div>
+        <div class="type-note">In der IT sind Runbooks standardisierte Schritt-für-Schritt-Anleitungen. Sie enthalten konkrete Handlungsabläufe für wiederkehrende Aufgaben, Systemänderungen oder Störungsbehebungen (Troubleshooting). Ihr Hauptziel ist es, IT-Prozesse effizienter, fehlerfreier und für das gesamte Team nachvollziehbar zu machen.</div>
+      </div>
+      <div class="type-col">
+        <div class="type-card" data-mode="summary">
+          <div class="icon">📝</div>
+          <h3>Management Summary Generator</h3>
+          <p>Erstellt eine professionelle Stellungnahme für Geschäftsführung &amp; Kunden: Einleitung mit These, drei Argumente nach dem 3-B-Prinzip und Fazit mit Handlungsempfehlung – inkl. PDF-Export.</p>
+        </div>
+        <div class="type-note">Eine Stellungnahme im IT-Kontext ist eine formelle und oft schriftliche Darlegung der eigenen Haltung, Bewertung oder Fachexpertise zu einem bestimmten IT-Thema, Gesetz, Produkt oder IT-Vorfall. Sie dient dazu, transparent Position zu beziehen, Bedenken zu äußern oder Handlungsempfehlungen zu geben.</div>
       </div>
     </div>
     <div class="home-stats">
@@ -456,7 +511,134 @@
       <button id="btnPrint">🖨️ PDF / Drucken</button>
       <button id="btnExportHtml">📄 Als HTML exportieren</button>
     </div>
-    <div id="doc"></div>
+    <div id="doc" class="doc-page"></div>
+  </div>
+</div>
+
+<!-- ================= STELLUNGNAHME / MANAGEMENT SUMMARY ================= -->
+<div class="screen" id="screen-summary">
+  <div class="topbar">
+    <h1><span class="brand-icon">📝</span> Management Summary Generator <span class="badge">STELLUNGNAHME</span></h1>
+    <div class="right">
+      <span class="user-chip" id="userChipSummary"></span>
+      <button class="small ghost" id="btnHomeFromSummary">🏠 Start</button>
+      <button class="small ghost" id="btnLogoutSummary">Abmelden</button>
+    </div>
+  </div>
+  <div class="container">
+
+    <div class="st-panel" id="stFormPanel">
+      <h2>Stellungnahme erstellen</h2>
+      <p class="st-intro">
+        Füllen Sie alle Pflichtfelder (<span class="req">*</span>) aus. Daraus wird eine professionelle, sachliche und
+        lösungsorientierte Stellungnahme für die Geschäftsführung des Empfängers erzeugt – mit Einleitung (Anlass &amp; These),
+        drei Argumenten in steigender Reihenfolge nach dem 3-B-Prinzip (Behauptung, Begründung, Beispiel) sowie Schluss
+        (Zusammenfassung, Fazit &amp; Empfehlung). Das Ergebnis kann als PDF gespeichert werden.
+      </p>
+
+      <div class="st-grid">
+        <div class="st-field">
+          <label>Empfänger (Unternehmen / Ansprechpartner) <span class="req">*</span></label>
+          <input type="text" id="stEmpfaenger" placeholder="z. B. Geschäftsführung Muster GmbH, Herr Dr. Beispiel">
+        </div>
+        <div class="st-field">
+          <label>Thema / Betreff der Stellungnahme <span class="req">*</span></label>
+          <input type="text" id="stThema" placeholder="z. B. Bewertung des Sicherheitsvorfalls vom 12.06.">
+        </div>
+        <div class="st-field">
+          <label>Bezugsdokument (Titel, Version / Datum) <span class="req">*</span></label>
+          <input type="text" id="stDokument" placeholder="z. B. Incident-Report IR-2026-042 vom 12.06.2026">
+        </div>
+        <div class="st-field">
+          <label>Verfasser (Name, Funktion) <span class="req">*</span></label>
+          <input type="text" id="stVerfasser" placeholder="z. B. Max Mustermann, IT-Leiter">
+        </div>
+        <div class="st-field full">
+          <label>Anlass / Hintergrund (Was ist passiert bzw. worum geht es?) <span class="req">*</span></label>
+          <textarea id="stAnlass" rows="3" placeholder="Kurze, sachliche Beschreibung des Anlasses (Vorfall, Projekt, Gesetzesänderung, Produktentscheidung ...)"></textarea>
+        </div>
+        <div class="st-field full">
+          <label>Eigene Position / Kernaussage (These) <span class="req">*</span></label>
+          <textarea id="stThese" rows="2" placeholder="z. B. Wir sind der Ansicht, dass die eingeleiteten Maßnahmen den Betrieb nachhaltig absichern und das Restrisiko wirksam reduzieren."></textarea>
+        </div>
+      </div>
+
+      <div class="st-arg">
+        <h3>Argument 1 <span>(Einstieg – Ihr schwächstes Argument)</span></h3>
+        <div class="st-grid">
+          <div class="st-field full">
+            <label>Behauptung (Aussage) <span class="req">*</span></label>
+            <input type="text" id="stArg1B" placeholder="Was behaupten Sie?">
+          </div>
+          <div class="st-field full">
+            <label>Begründung (Warum ist das so?) <span class="req">*</span></label>
+            <textarea id="stArg1G" rows="2"></textarea>
+          </div>
+          <div class="st-field full">
+            <label>Beispiel / konkreter Beleg <span class="req">*</span></label>
+            <textarea id="stArg1X" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="st-arg">
+        <h3>Argument 2 <span>(Mittelbau)</span></h3>
+        <div class="st-grid">
+          <div class="st-field full">
+            <label>Behauptung (Aussage) <span class="req">*</span></label>
+            <input type="text" id="stArg2B" placeholder="Was behaupten Sie?">
+          </div>
+          <div class="st-field full">
+            <label>Begründung (Warum ist das so?) <span class="req">*</span></label>
+            <textarea id="stArg2G" rows="2"></textarea>
+          </div>
+          <div class="st-field full">
+            <label>Beispiel / konkreter Beleg <span class="req">*</span></label>
+            <textarea id="stArg2X" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="st-arg">
+        <h3>Argument 3 <span>(Abschluss – Ihr stärkstes Argument)</span></h3>
+        <div class="st-grid">
+          <div class="st-field full">
+            <label>Behauptung (Aussage) <span class="req">*</span></label>
+            <input type="text" id="stArg3B" placeholder="Was behaupten Sie?">
+          </div>
+          <div class="st-field full">
+            <label>Begründung (Warum ist das so?) <span class="req">*</span></label>
+            <textarea id="stArg3G" rows="2"></textarea>
+          </div>
+          <div class="st-field full">
+            <label>Beispiel / konkreter Beleg <span class="req">*</span></label>
+            <textarea id="stArg3X" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="st-grid">
+        <div class="st-field full">
+          <label>Fazit / Lösungsvorschlag &amp; Handlungsempfehlung <span class="req">*</span></label>
+          <textarea id="stEmpfehlung" rows="3" placeholder="Welche Empfehlung bzw. welchen Lösungsvorschlag geben Sie dem Empfänger mit?"></textarea>
+        </div>
+      </div>
+
+      <div class="st-error" id="stError"></div>
+      <div class="btn-row">
+        <button class="primary" id="btnStGenerate">📝 Stellungnahme erstellen</button>
+        <button class="ghost" id="btnStReset">Felder leeren</button>
+      </div>
+    </div>
+
+    <div id="stResultWrap" style="display:none;">
+      <div class="detail-actions">
+        <button id="btnStBack">← Zurück zum Formular</button>
+        <button id="btnStPdf">🖨️ Als PDF speichern / Drucken</button>
+      </div>
+      <div id="stDoc" class="doc-page"></div>
+    </div>
+
   </div>
 </div>
 
@@ -513,7 +695,7 @@
     document.getElementById('loginPass').value = '';
     showScreen('login');
   }
-  ['btnLogoutHome','btnLogoutList','btnLogoutDetail'].forEach(function(id){
+  ['btnLogoutHome','btnLogoutList','btnLogoutDetail','btnLogoutSummary'].forEach(function(id){
     document.getElementById(id).addEventListener('click', doLogout);
   });
 
@@ -1399,91 +1581,14 @@
   var currentSearch = '';
   var currentScenarioId = null;
 
-  // ================= VOICE EXPLANATION =================
-  var VOICE_TEXT = {
-    runbook: 'In der IT sind Runbooks standardisierte Schritt-für-Schritt-Anleitungen. Sie enthalten konkrete Handlungsabläufe für wiederkehrende Aufgaben, Systemänderungen oder Störungsbehebungen, also Troubleshooting. Ihr Hauptziel ist es, IT-Prozesse effizienter, fehlerfreier und für das gesamte Team nachvollziehbar zu machen.',
-    playbook: 'In der IT sind Playbooks standardisierte Handlungsanweisungen oder automatisierte Workflows. Sie definieren Schritt für Schritt, wie Teams auf bestimmte Situationen, zum Beispiel Cyberangriffe, Systemausfälle oder wiederkehrende administrative Aufgaben, reagieren sollen. Sie dienen dazu, Prozesse zu beschleunigen, Fehler unter Stress zu minimieren und menschliches Wissen teamweit verfügbar zu machen.'
-  };
-  var cachedVoices = [];
-  var currentUtterance = null; // keep a strong reference so Chrome doesn't garbage-collect mid-speech
-  var keepAliveTimer = null;
-  function refreshVoices(){
-    if('speechSynthesis' in window){ cachedVoices = window.speechSynthesis.getVoices(); }
-  }
-  if('speechSynthesis' in window){
-    refreshVoices();
-    window.speechSynthesis.onvoiceschanged = refreshVoices;
-  }
-  function pickFemaleGermanVoice(){
-    if(!cachedVoices.length) return null;
-    var german = cachedVoices.filter(function(v){ return v.lang && v.lang.toLowerCase().indexOf('de') === 0; });
-    var pool = german.length ? german : cachedVoices;
-    // 1. Bevorzugt: neuronale "Online (Natural)"-Stimmen (z. B. Edge/Windows) – klingen deutlich menschlicher.
-    var naturalFemaleHints = ['katja','elke','amala','seraphina','klara'];
-    var natural = pool.find(function(v){
-      var n = v.name.toLowerCase();
-      var isNatural = n.indexOf('natural') > -1 || n.indexOf('online') > -1 || n.indexOf('neural') > -1;
-      var isFemale = naturalFemaleHints.some(function(h){ return n.indexOf(h) > -1; }) || n.indexOf('female') > -1;
-      return isNatural && (isFemale || naturalFemaleHints.length === 0);
-    });
-    if(natural) return natural;
-    var anyNatural = pool.find(function(v){
-      var n = v.name.toLowerCase();
-      return n.indexOf('natural') > -1 || n.indexOf('online') > -1 || n.indexOf('neural') > -1;
-    });
-    if(anyNatural) return anyNatural;
-    // 2. Fallback: normale System-Stimme mit weiblichem Namen.
-    var femaleHints = ['katja','petra','anna','helena','marlene','vicki','female','frau','google deutsch'];
-    var match = pool.find(function(v){
-      var n = v.name.toLowerCase();
-      return femaleHints.some(function(h){ return n.indexOf(h) > -1; });
-    });
-    return match || (german.length ? german[0] : null);
-  }
-  function showVoiceToast(msg, isError){
-    var el = document.getElementById('voiceToast');
-    if(!el) return;
-    el.textContent = msg;
-    el.classList.toggle('error', !!isError);
-    el.classList.add('show');
-    clearTimeout(el._hideTimer);
-    el._hideTimer = setTimeout(function(){ el.classList.remove('show'); }, isError ? 6000 : 4000);
-  }
-  function speakExplanation(mode){
-    if(!('speechSynthesis' in window)){
-      showVoiceToast('Sprachausgabe wird von diesem Browser nicht unterstützt.', true);
-      return;
-    }
-    clearInterval(keepAliveTimer);
-    window.speechSynthesis.cancel();
-    // Chrome kann speak() direkt nach cancel() im selben Tick verschlucken – kurze Verzögerung umgeht das.
-    setTimeout(function(){
-      refreshVoices();
-      var utter = new SpeechSynthesisUtterance(VOICE_TEXT[mode]);
-      utter.lang = 'de-DE';
-      utter.pitch = 1;
-      utter.rate = 1;
-      var voice = pickFemaleGermanVoice();
-      if(voice) utter.voice = voice;
-      utter.onstart = function(){ showVoiceToast('🔊 Sprachausgabe läuft (' + (voice ? voice.name : 'Standardstimme') + ')…'); };
-      utter.onerror = function(e){ showVoiceToast('Sprachausgabe-Fehler: ' + e.error, true); clearInterval(keepAliveTimer); };
-      utter.onend = function(){ clearInterval(keepAliveTimer); };
-      currentUtterance = utter;
-      window.speechSynthesis.speak(utter);
-      // Chrome pausiert lange Sprachausgaben nach ca. 15s von selbst – dieser Trick hält sie am Laufen.
-      keepAliveTimer = setInterval(function(){
-        if(!window.speechSynthesis.speaking){ clearInterval(keepAliveTimer); return; }
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }, 4000);
-    }, 60);
-  }
-
   // ================= HOME =================
   document.querySelectorAll('.type-card').forEach(function(card){
     card.addEventListener('click', function(){
+      if(card.dataset.mode === 'summary'){
+        showScreen('summary');
+        return;
+      }
       currentMode = card.dataset.mode;
-      speakExplanation(currentMode);
       showScreen('list');
       renderModeUI();
       renderCatTabs();
@@ -1491,6 +1596,7 @@
     });
   });
   document.getElementById('btnHomeFromList').addEventListener('click', function(){ showScreen('home'); });
+  document.getElementById('btnHomeFromSummary').addEventListener('click', function(){ showScreen('home'); });
 
   // ================= MODE TOGGLE (on list screen) =================
   document.getElementById('toggleP').addEventListener('click', function(){ currentMode='playbook'; renderModeUI(); });
@@ -1630,7 +1736,7 @@
     html += '<h2 class="doc-h2">📝 Hinweis zur Nachbereitung</h2>';
     html += '<div class="note-box">'+esc(s.note)+'</div>';
 
-    html += '<div class="footer-note">Erstellt mit Die üblichen Verdächtigen &ndash; Run &amp; Playbooks &middot; '+new Date().toLocaleString('de-DE')+' &middot; Angemeldet als '+esc(currentUser||'')+'</div>';
+    html += '<div class="footer-note">Erstellt mit Die üblichen Verdächtigen &ndash; SDM Dashboard &middot; '+new Date().toLocaleString('de-DE')+' &middot; Angemeldet als '+esc(currentUser||'')+'</div>';
 
     document.getElementById('doc').innerHTML = html;
   }
@@ -1643,8 +1749,8 @@
     var docHtml = document.getElementById('doc').innerHTML;
     var docStyles = document.querySelector('style').innerHTML.split('@media print')[0];
     var full = '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>'+esc(s.title)+'</title>' +
-      '<style>body{background:#fff;margin:0;padding:40px;font-family:"Segoe UI",Arial,sans-serif;} #doc{max-width:900px;margin:0 auto;box-shadow:none;} ' + docStyles + '</style>' +
-      '</head><body><div id="doc">'+docHtml+'</div></body></html>';
+      '<style>body{background:#fff;margin:0;padding:40px;font-family:"Segoe UI",Arial,sans-serif;} .doc-page{max-width:900px;margin:0 auto;box-shadow:none;} ' + docStyles + '</style>' +
+      '</head><body><div id="doc" class="doc-page">'+docHtml+'</div></body></html>';
     var blob = new Blob([full], {type:'text/html'});
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
@@ -1652,6 +1758,117 @@
     a.href = url; a.download = name + '.html';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  });
+
+  // ================= STELLUNGNAHMEN-GENERATOR =================
+  var ST_REQUIRED = [
+    'stEmpfaenger','stThema','stDokument','stVerfasser','stAnlass','stThese',
+    'stArg1B','stArg1G','stArg1X',
+    'stArg2B','stArg2G','stArg2X',
+    'stArg3B','stArg3G','stArg3X',
+    'stEmpfehlung'
+  ];
+
+  function stVal(id){ return document.getElementById(id).value.trim(); }
+  function endDot(s){ s = s.trim(); return /[.!?:]$/.test(s) ? s : s + '.'; }
+
+  ST_REQUIRED.forEach(function(id){
+    document.getElementById(id).addEventListener('input', function(){
+      this.classList.remove('invalid');
+    });
+  });
+
+  function stValidate(){
+    var firstInvalid = null;
+    ST_REQUIRED.forEach(function(id){
+      var el = document.getElementById(id);
+      if(!el.value.trim()){
+        el.classList.add('invalid');
+        if(!firstInvalid) firstInvalid = el;
+      } else {
+        el.classList.remove('invalid');
+      }
+    });
+    var err = document.getElementById('stError');
+    if(firstInvalid){
+      err.textContent = 'Bitte füllen Sie alle Pflichtfelder (*) aus – fehlende Felder sind rot markiert.';
+      firstInvalid.focus();
+      return false;
+    }
+    err.textContent = '';
+    return true;
+  }
+
+  function stArgBlock(num, label, b, g, x){
+    var html = '<h2 class="doc-h2"><span class="step-num" style="background:#1f2937;color:#fff;">'+num+'</span> Argument '+num+' '+label+'</h2>';
+    html += '<p><b>Behauptung:</b> '+esc(endDot(b))+'</p>';
+    html += '<p><b>Begründung:</b> '+esc(endDot(g))+'</p>';
+    html += '<p><b>Beispiel / Beleg:</b> '+esc(endDot(x))+'</p>';
+    return html;
+  }
+
+  function renderStellungnahme(){
+    var datum = new Date().toLocaleDateString('de-DE');
+    var html = '';
+    html += '<h1 class="doc-title">Stellungnahme: '+esc(stVal('stThema'))+'</h1>';
+    html += '<div class="doc-sub">Management Summary &middot; Stand: '+datum+'</div>';
+
+    html += '<div class="meta-grid">';
+    html += '<div><b>Empfänger:</b> '+esc(stVal('stEmpfaenger'))+'</div>';
+    html += '<div><b>Verfasser:</b> '+esc(stVal('stVerfasser'))+'</div>';
+    html += '<div><b>Bezugsdokument:</b> '+esc(stVal('stDokument'))+'</div>';
+    html += '<div><b>Datum:</b> '+datum+'</div>';
+    html += '</div>';
+
+    html += '<h2 class="doc-h2">1. Einleitung</h2>';
+    html += '<p>Mit dieser Stellungnahme beziehen wir Position zum Thema <b>'+esc(stVal('stThema'))+'</b>. '
+          + 'Grundlage ist das Dokument &bdquo;'+esc(stVal('stDokument'))+'&ldquo;. '
+          + 'Anlass: '+esc(endDot(stVal('stAnlass')))+'</p>';
+    html += '<p><b>Unsere Position:</b> '+esc(endDot(stVal('stThese')))+'</p>';
+
+    html += '<h2 class="doc-h2">2. Hauptteil &ndash; Argumente</h2>';
+    html += stArgBlock(1, '', stVal('stArg1B'), stVal('stArg1G'), stVal('stArg1X'));
+    html += stArgBlock(2, '', stVal('stArg2B'), stVal('stArg2G'), stVal('stArg2X'));
+    html += stArgBlock(3, '(Kernargument)', stVal('stArg3B'), stVal('stArg3G'), stVal('stArg3X'));
+
+    html += '<h2 class="doc-h2">3. Schluss</h2>';
+    html += '<p><b>Zusammenfassung:</b> Zusammenfassend halten wir fest: '
+          + esc(endDot(stVal('stArg1B'))) + ' '
+          + esc(endDot(stVal('stArg2B'))) + ' '
+          + 'Entscheidend ist: ' + esc(endDot(stVal('stArg3B'))) + '</p>';
+    html += '<div class="note-box"><b>Fazit &amp; Empfehlung:</b><br>'+esc(endDot(stVal('stEmpfehlung')))+'</div>';
+
+    html += '<p style="margin-top:24px;">Wir stehen für Rückfragen und ein persönliches Gespräch jederzeit gerne zur Verfügung und begleiten die Umsetzung der empfohlenen Maßnahmen aktiv und partnerschaftlich.</p>';
+    html += '<div class="sig-block">Mit freundlichen Grüßen<br><br><b>'+esc(stVal('stVerfasser'))+'</b></div>';
+
+    html += '<div class="footer-note">Erstellt mit Die üblichen Verdächtigen &ndash; SDM Dashboard &middot; '+new Date().toLocaleString('de-DE')+' &middot; Angemeldet als '+esc(currentUser||'')+'</div>';
+
+    document.getElementById('stDoc').innerHTML = html;
+  }
+
+  document.getElementById('btnStGenerate').addEventListener('click', function(){
+    if(!stValidate()) return;
+    renderStellungnahme();
+    document.getElementById('stFormPanel').style.display = 'none';
+    document.getElementById('stResultWrap').style.display = 'block';
+    window.scrollTo(0,0);
+  });
+
+  document.getElementById('btnStBack').addEventListener('click', function(){
+    document.getElementById('stResultWrap').style.display = 'none';
+    document.getElementById('stFormPanel').style.display = 'block';
+    window.scrollTo(0,0);
+  });
+
+  document.getElementById('btnStPdf').addEventListener('click', function(){ window.print(); });
+
+  document.getElementById('btnStReset').addEventListener('click', function(){
+    ST_REQUIRED.forEach(function(id){
+      var el = document.getElementById(id);
+      el.value = '';
+      el.classList.remove('invalid');
+    });
+    document.getElementById('stError').textContent = '';
   });
 
   // ================= INIT =================
