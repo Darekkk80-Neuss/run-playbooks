@@ -169,11 +169,14 @@
   .hero p{ color:var(--text-dim); font-size:14.5px; max-width:580px; margin:0 auto; line-height:1.6; }
   .type-grid{
     display:grid;
-    grid-template-columns:repeat(3, 1fr);
+    grid-template-columns:repeat(4, 1fr);
     gap:20px;
-    max-width:1100px;
+    max-width:1280px;
     margin:36px auto 0;
     align-items:stretch;
+  }
+  @media (max-width: 1200px){
+    .type-grid{ grid-template-columns:repeat(2, 1fr); }
   }
   .type-col{ display:flex; flex-direction:column; gap:14px; }
   .type-col .type-card{ flex:1; }
@@ -314,14 +317,14 @@
   .st-field.full{ grid-column:1 / -1; }
   .st-field label{ font-size:12px; color:var(--text-dim); font-weight:600; margin-bottom:5px; }
   .st-field .req{ color:var(--danger); }
-  .st-panel input[type=text], .st-panel textarea{
+  .st-panel input[type=text], .st-panel textarea, .st-panel select{
     width:100%; padding:10px 12px;
     background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm);
     color:var(--text); font-size:13.5px; resize:vertical;
     transition:border-color .15s;
   }
-  .st-panel input[type=text]:focus, .st-panel textarea:focus{ outline:none; border-color:var(--accent); }
-  .st-panel input.invalid, .st-panel textarea.invalid{ border-color:var(--danger); }
+  .st-panel input[type=text]:focus, .st-panel textarea:focus, .st-panel select:focus{ outline:none; border-color:var(--accent); }
+  .st-panel input.invalid, .st-panel textarea.invalid, .st-panel select.invalid{ border-color:var(--danger); }
   .st-arg{
     border:1px solid var(--border); border-radius:var(--radius-sm);
     background:var(--panel); padding:16px 16px 6px; margin-bottom:14px;
@@ -463,6 +466,14 @@
           <p>Erstellt eine professionelle Stellungnahme für Geschäftsführung &amp; Kunden: Einleitung mit These, drei Argumente nach dem 3-B-Prinzip und Fazit mit Handlungsempfehlung – inkl. PDF-Export.</p>
         </div>
         <div class="type-note">Eine Stellungnahme im IT-Kontext ist eine formelle und oft schriftliche Darlegung der eigenen Haltung, Bewertung oder Fachexpertise zu einem bestimmten IT-Thema, Gesetz, Produkt oder IT-Vorfall. Sie dient dazu, transparent Position zu beziehen, Bedenken zu äußern oder Handlungsempfehlungen zu geben.</div>
+      </div>
+      <div class="type-col">
+        <div class="type-card" data-mode="msummary">
+          <div class="icon">📊</div>
+          <h3>Management Summary</h3>
+          <p>Verdichtet Berichte und Projektstände auf das Wesentliche: Ausgangslage, Ergebnisse, Kennzahlen und Handlungsempfehlungen für Entscheider – inkl. PDF-Export.</p>
+        </div>
+        <div class="type-note">Eine Management Summary ist die komprimierte Zusammenfassung eines längeren Dokuments (z. B. Businessplan, Projektbericht oder Abschlussarbeit). Sie dient als schnelle Entscheidungsgrundlage für Führungskräfte, die auf ein bis zwei Seiten alle wesentlichen Fakten, Kennzahlen und Handlungsempfehlungen auf den Punkt bringt.</div>
       </div>
     </div>
     <div class="home-stats">
@@ -643,6 +654,96 @@
   </div>
 </div>
 
+<!-- ================= MANAGEMENT SUMMARY ================= -->
+<div class="screen" id="screen-msummary">
+  <div class="topbar">
+    <h1><span class="brand-icon">📊</span> Management Summary <span class="badge">ENTSCHEIDUNGSVORLAGE</span></h1>
+    <div class="right">
+      <span class="user-chip" id="userChipMsummary"></span>
+      <button class="small ghost" id="btnHomeFromMsummary">🏠 Start</button>
+      <button class="small ghost" id="btnLogoutMsummary">Abmelden</button>
+    </div>
+  </div>
+  <div class="container">
+
+    <div class="st-panel" id="msFormPanel">
+      <h2>Management Summary erstellen</h2>
+      <p class="st-intro">
+        Füllen Sie die Pflichtfelder (<span class="req">*</span>) aus. Daraus wird eine kompakte Management Summary
+        auf Entscheider-Niveau erzeugt – mit Ausgangslage &amp; Zielsetzung, wesentlichen Ergebnissen, Kennzahlen,
+        optionalen Risiken sowie Handlungsempfehlung und nächsten Schritten. Das Ergebnis kann als PDF gespeichert werden.
+      </p>
+
+      <div class="st-grid">
+        <div class="st-field">
+          <label>Kunde / Empfänger <span class="req">*</span></label>
+          <input type="text" id="msKunde" placeholder="z. B. Muster GmbH, Geschäftsführung">
+        </div>
+        <div class="st-field">
+          <label>Berichtszeitraum <span class="req">*</span></label>
+          <input type="text" id="msZeitraum" placeholder="z. B. Q2/2026 oder 01.04.–30.06.2026">
+        </div>
+        <div class="st-field">
+          <label>Titel / Thema des Basisdokuments <span class="req">*</span></label>
+          <input type="text" id="msTitel" placeholder="z. B. Projektbericht Serverkonsolidierung">
+        </div>
+        <div class="st-field">
+          <label>Verfasser (Name, Funktion) <span class="req">*</span></label>
+          <input type="text" id="msVerfasser" placeholder="z. B. Max Mustermann, IT-Leiter">
+        </div>
+        <div class="st-field">
+          <label>Gesamtstatus / Bewertung <span class="req">*</span></label>
+          <select id="msStatus">
+            <option value="">Bitte wählen ...</option>
+            <option value="plan">🟢 Im Plan</option>
+            <option value="teil">🟡 Teilweise im Plan</option>
+            <option value="krit">🔴 Kritisch</option>
+          </select>
+        </div>
+        <div class="st-field">
+          <label>Budget- / Kostenrahmen (optional)</label>
+          <input type="text" id="msBudget" placeholder="z. B. 120 T€ Budget, 98 T€ verbraucht">
+        </div>
+        <div class="st-field full">
+          <label>Ausgangslage &amp; Zielsetzung <span class="req">*</span></label>
+          <textarea id="msAusgangslage" rows="3" placeholder="Worum geht es? Welches Ziel wurde verfolgt bzw. welche Frage sollte beantwortet werden?"></textarea>
+        </div>
+        <div class="st-field full">
+          <label>Wesentliche Ergebnisse / Erkenntnisse <span class="req">*</span></label>
+          <textarea id="msErgebnisse" rows="3" placeholder="Die wichtigsten Ergebnisse und Erkenntnisse des Zeitraums in ganzen Sätzen."></textarea>
+        </div>
+        <div class="st-field full">
+          <label>Kennzahlen / Fakten – eine pro Zeile im Format &bdquo;Kennzahl: Wert&ldquo; <span class="req">*</span></label>
+          <textarea id="msKennzahlen" rows="4" placeholder="Verfügbarkeit: 99,7 %&#10;Gelöste Tickets: 412&#10;SLA-Erfüllung: 96 %"></textarea>
+        </div>
+        <div class="st-field full">
+          <label>Risiken &amp; Herausforderungen (optional)</label>
+          <textarea id="msRisiken" rows="2" placeholder="Welche Risiken oder offenen Punkte sollten Entscheider kennen?"></textarea>
+        </div>
+        <div class="st-field full">
+          <label>Handlungsempfehlung &amp; nächste Schritte <span class="req">*</span></label>
+          <textarea id="msEmpfehlung" rows="3" placeholder="Welche Entscheidung bzw. welche nächsten Schritte empfehlen Sie?"></textarea>
+        </div>
+      </div>
+
+      <div class="st-error" id="msError"></div>
+      <div class="btn-row">
+        <button class="primary" id="btnMsGenerate">📊 Management Summary erstellen</button>
+        <button class="ghost" id="btnMsReset">Felder leeren</button>
+      </div>
+    </div>
+
+    <div id="msResultWrap" style="display:none;">
+      <div class="detail-actions">
+        <button id="btnMsBack">← Zurück zum Formular</button>
+        <button id="btnMsPdf">🖨️ Als PDF speichern / Drucken</button>
+      </div>
+      <div id="msDoc" class="doc-page"></div>
+    </div>
+
+  </div>
+</div>
+
 <script>
 (function(){
 
@@ -696,7 +797,7 @@
     document.getElementById('loginPass').value = '';
     showScreen('login');
   }
-  ['btnLogoutHome','btnLogoutList','btnLogoutDetail','btnLogoutSummary'].forEach(function(id){
+  ['btnLogoutHome','btnLogoutList','btnLogoutDetail','btnLogoutSummary','btnLogoutMsummary'].forEach(function(id){
     document.getElementById(id).addEventListener('click', doLogout);
   });
 
@@ -1585,8 +1686,8 @@
   // ================= HOME =================
   document.querySelectorAll('.type-card').forEach(function(card){
     card.addEventListener('click', function(){
-      if(card.dataset.mode === 'summary'){
-        showScreen('summary');
+      if(card.dataset.mode === 'summary' || card.dataset.mode === 'msummary'){
+        showScreen(card.dataset.mode);
         return;
       }
       currentMode = card.dataset.mode;
@@ -1598,6 +1699,7 @@
   });
   document.getElementById('btnHomeFromList').addEventListener('click', function(){ showScreen('home'); });
   document.getElementById('btnHomeFromSummary').addEventListener('click', function(){ showScreen('home'); });
+  document.getElementById('btnHomeFromMsummary').addEventListener('click', function(){ showScreen('home'); });
 
   // ================= MODE TOGGLE (on list screen) =================
   document.getElementById('toggleP').addEventListener('click', function(){ currentMode='playbook'; renderModeUI(); });
@@ -1915,6 +2017,133 @@
       el.classList.remove('invalid');
     });
     document.getElementById('stError').textContent = '';
+  });
+
+  // ================= MANAGEMENT-SUMMARY-GENERATOR =================
+  var MS_REQUIRED = ['msKunde','msZeitraum','msTitel','msVerfasser','msStatus','msAusgangslage','msErgebnisse','msKennzahlen','msEmpfehlung'];
+  var MS_ALL = MS_REQUIRED.concat(['msBudget','msRisiken']);
+  var MS_STATUS = {
+    plan: { label:'Im Plan',            color:'#16a34a' },
+    teil: { label:'Teilweise im Plan',  color:'#d97706' },
+    krit: { label:'Kritisch',           color:'#dc2626' }
+  };
+
+  MS_ALL.forEach(function(id){
+    var el = document.getElementById(id);
+    ['input','change'].forEach(function(ev){
+      el.addEventListener(ev, function(){ this.classList.remove('invalid'); });
+    });
+  });
+
+  function msVal(id){ return document.getElementById(id).value.trim(); }
+
+  function msValidate(){
+    var firstInvalid = null;
+    MS_REQUIRED.forEach(function(id){
+      var el = document.getElementById(id);
+      if(!el.value.trim()){
+        el.classList.add('invalid');
+        if(!firstInvalid) firstInvalid = el;
+      } else {
+        el.classList.remove('invalid');
+      }
+    });
+    var err = document.getElementById('msError');
+    if(firstInvalid){
+      err.textContent = 'Bitte füllen Sie alle Pflichtfelder (*) aus – fehlende Felder sind rot markiert.';
+      firstInvalid.focus();
+      return false;
+    }
+    err.textContent = '';
+    return true;
+  }
+
+  function msKpiTable(text){
+    var lines = text.split(/\n+/).map(function(l){ return l.trim(); }).filter(Boolean);
+    var html = '<table class="doc-table"><thead><tr><th>Kennzahl / Fakt</th><th>Wert / Ausprägung</th></tr></thead><tbody>';
+    lines.forEach(function(line){
+      var idx = line.indexOf(':');
+      if(idx > -1){
+        html += '<tr><td>'+esc(line.slice(0, idx).trim())+'</td><td>'+esc(line.slice(idx + 1).trim())+'</td></tr>';
+      } else {
+        html += '<tr><td colspan="2">'+esc(line)+'</td></tr>';
+      }
+    });
+    return html + '</tbody></table>';
+  }
+
+  function renderMSummary(){
+    var datum = new Date().toLocaleDateString('de-DE');
+    var status = MS_STATUS[msVal('msStatus')] || { label: msVal('msStatus'), color:'#374151' };
+    var html = '';
+    html += '<h1 class="doc-title">Management Summary: '+esc(msVal('msTitel'))+'</h1>';
+    html += '<div class="doc-sub">Für '+esc(msVal('msKunde'))+' &middot; Berichtszeitraum: '+esc(msVal('msZeitraum'))+' &middot; Stand: '+datum+'</div>';
+
+    html += '<div class="meta-grid">';
+    html += '<div><b>Kunde / Empfänger:</b> '+esc(msVal('msKunde'))+'</div>';
+    html += '<div><b>Berichtszeitraum:</b> '+esc(msVal('msZeitraum'))+'</div>';
+    html += '<div><b>Verfasser:</b> '+esc(msVal('msVerfasser'))+'</div>';
+    html += '<div><b>Gesamtstatus:</b> <span style="color:'+status.color+';font-weight:700;">&#9679; '+esc(status.label)+'</span></div>';
+    if(msVal('msBudget')){
+      html += '<div><b>Budget / Kosten:</b> '+esc(msVal('msBudget'))+'</div>';
+      html += '<div><b>Datum:</b> '+datum+'</div>';
+    }
+    html += '</div>';
+
+    html += '<p>Die vorliegende Management Summary verdichtet die wesentlichen Fakten, Kennzahlen und Empfehlungen '
+          + 'zum Thema &bdquo;'+esc(msVal('msTitel'))+'&ldquo; für den Zeitraum '+esc(msVal('msZeitraum'))+' '
+          + 'und dient als schnelle Entscheidungsgrundlage.</p>';
+
+    html += '<h2 class="doc-h2">1. Ausgangslage &amp; Zielsetzung</h2>';
+    html += '<p>'+esc(endDot(msVal('msAusgangslage')))+'</p>';
+
+    html += '<h2 class="doc-h2">2. Wesentliche Ergebnisse &amp; Erkenntnisse</h2>';
+    html += '<p>'+esc(endDot(msVal('msErgebnisse')))+'</p>';
+
+    html += '<h2 class="doc-h2">3. Zahlen, Daten, Fakten</h2>';
+    html += msKpiTable(msVal('msKennzahlen'));
+
+    if(msVal('msRisiken')){
+      html += '<h2 class="doc-h2">4. Risiken &amp; Herausforderungen</h2>';
+      html += '<p>Gleichzeitig behalten wir die folgenden Punkte aktiv im Blick: '+esc(endDot(msVal('msRisiken')))+'</p>';
+    }
+
+    html += '<h2 class="doc-h2">'+(msVal('msRisiken') ? '5' : '4')+'. Handlungsempfehlung &amp; nächste Schritte</h2>';
+    html += '<div class="note-box">Auf Basis der dargestellten Ergebnisse empfehlen wir das folgende Vorgehen: '
+          + esc(endDot(msVal('msEmpfehlung')))
+          + ' Aus unserer Sicht werden damit die richtigen Prioritäten für den kommenden Zeitraum gesetzt.</div>';
+
+    html += '<p style="margin-top:24px;">Für Rückfragen sowie eine vertiefende Durchsprache der Ergebnisse stehen wir jederzeit gerne zur Verfügung.</p>';
+    html += '<div class="sig-block">Mit freundlichen Grüßen<br><br><b>'+esc(msVal('msVerfasser'))+'</b></div>';
+
+    html += '<div class="footer-note">Erstellt mit Die üblichen Verdächtigen &ndash; SDM Dashboard &middot; '+new Date().toLocaleString('de-DE')+' &middot; Angemeldet als '+esc(currentUser||'')+'</div>';
+
+    document.getElementById('msDoc').innerHTML = html;
+  }
+
+  document.getElementById('btnMsGenerate').addEventListener('click', function(){
+    if(!msValidate()) return;
+    renderMSummary();
+    document.getElementById('msFormPanel').style.display = 'none';
+    document.getElementById('msResultWrap').style.display = 'block';
+    window.scrollTo(0,0);
+  });
+
+  document.getElementById('btnMsBack').addEventListener('click', function(){
+    document.getElementById('msResultWrap').style.display = 'none';
+    document.getElementById('msFormPanel').style.display = 'block';
+    window.scrollTo(0,0);
+  });
+
+  document.getElementById('btnMsPdf').addEventListener('click', function(){ window.print(); });
+
+  document.getElementById('btnMsReset').addEventListener('click', function(){
+    MS_ALL.forEach(function(id){
+      var el = document.getElementById(id);
+      el.value = '';
+      el.classList.remove('invalid');
+    });
+    document.getElementById('msError').textContent = '';
   });
 
   // ================= INIT =================
