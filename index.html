@@ -530,9 +530,10 @@
     <div class="st-panel" id="stFormPanel">
       <h2>Stellungnahme erstellen</h2>
       <p class="st-intro">
-        Füllen Sie alle Pflichtfelder (<span class="req">*</span>) aus. Daraus wird eine professionelle, sachliche und
-        lösungsorientierte Stellungnahme für die Geschäftsführung des Empfängers erzeugt – mit Einleitung (Anlass &amp; These),
-        drei Argumenten in steigender Reihenfolge nach dem 3-B-Prinzip (Behauptung, Begründung, Beispiel) sowie Schluss
+        Füllen Sie die Pflichtfelder (<span class="req">*</span>) aus – <b>Argument 1 ist verpflichtend</b>, die Argumente 2 und 3
+        sind optional und stärken Ihre Stellungnahme zusätzlich. Aus Ihren Eingaben wird eine professionelle, sachliche und
+        lösungsorientierte Stellungnahme in durchgängiger Managementsprache erzeugt – mit Einleitung (Anlass &amp; These),
+        fachlicher Begründung in ganzen Sätzen nach dem 3-B-Prinzip (Behauptung, Begründung, Beispiel) sowie Schluss
         (Zusammenfassung, Fazit &amp; Empfehlung). Das Ergebnis kann als PDF gespeichert werden.
       </p>
 
@@ -564,7 +565,7 @@
       </div>
 
       <div class="st-arg">
-        <h3>Argument 1 <span>(Einstieg – Ihr schwächstes Argument)</span></h3>
+        <h3>Argument 1 <span>(Pflicht – Einstieg in Ihre Argumentation)</span></h3>
         <div class="st-grid">
           <div class="st-field full">
             <label>Behauptung (Aussage) <span class="req">*</span></label>
@@ -582,36 +583,36 @@
       </div>
 
       <div class="st-arg">
-        <h3>Argument 2 <span>(Mittelbau)</span></h3>
+        <h3>Argument 2 <span>(optional – Mittelbau)</span></h3>
         <div class="st-grid">
           <div class="st-field full">
-            <label>Behauptung (Aussage) <span class="req">*</span></label>
-            <input type="text" id="stArg2B" placeholder="Was behaupten Sie?">
+            <label>Behauptung (Aussage)</label>
+            <input type="text" id="stArg2B" placeholder="Was behaupten Sie? (optional)">
           </div>
           <div class="st-field full">
-            <label>Begründung (Warum ist das so?) <span class="req">*</span></label>
+            <label>Begründung (Warum ist das so?)</label>
             <textarea id="stArg2G" rows="2"></textarea>
           </div>
           <div class="st-field full">
-            <label>Beispiel / konkreter Beleg <span class="req">*</span></label>
+            <label>Beispiel / konkreter Beleg</label>
             <textarea id="stArg2X" rows="2"></textarea>
           </div>
         </div>
       </div>
 
       <div class="st-arg">
-        <h3>Argument 3 <span>(Abschluss – Ihr stärkstes Argument)</span></h3>
+        <h3>Argument 3 <span>(optional – Abschluss, Ihr stärkstes Argument)</span></h3>
         <div class="st-grid">
           <div class="st-field full">
-            <label>Behauptung (Aussage) <span class="req">*</span></label>
-            <input type="text" id="stArg3B" placeholder="Was behaupten Sie?">
+            <label>Behauptung (Aussage)</label>
+            <input type="text" id="stArg3B" placeholder="Was behaupten Sie? (optional)">
           </div>
           <div class="st-field full">
-            <label>Begründung (Warum ist das so?) <span class="req">*</span></label>
+            <label>Begründung (Warum ist das so?)</label>
             <textarea id="stArg3G" rows="2"></textarea>
           </div>
           <div class="st-field full">
-            <label>Beispiel / konkreter Beleg <span class="req">*</span></label>
+            <label>Beispiel / konkreter Beleg</label>
             <textarea id="stArg3X" rows="2"></textarea>
           </div>
         </div>
@@ -1764,15 +1765,19 @@
   var ST_REQUIRED = [
     'stEmpfaenger','stThema','stDokument','stVerfasser','stAnlass','stThese',
     'stArg1B','stArg1G','stArg1X',
-    'stArg2B','stArg2G','stArg2X',
-    'stArg3B','stArg3G','stArg3X',
     'stEmpfehlung'
   ];
+  // Optionale Argumente: wird eines der drei Felder befüllt, sind alle drei nötig (3-B-Prinzip).
+  var ST_OPTIONAL_GROUPS = [
+    ['stArg2B','stArg2G','stArg2X'],
+    ['stArg3B','stArg3G','stArg3X']
+  ];
+  var ST_ALL = ST_REQUIRED.concat(ST_OPTIONAL_GROUPS[0], ST_OPTIONAL_GROUPS[1]);
 
   function stVal(id){ return document.getElementById(id).value.trim(); }
   function endDot(s){ s = s.trim(); return /[.!?:]$/.test(s) ? s : s + '.'; }
 
-  ST_REQUIRED.forEach(function(id){
+  ST_ALL.forEach(function(id){
     document.getElementById(id).addEventListener('input', function(){
       this.classList.remove('invalid');
     });
@@ -1780,18 +1785,30 @@
 
   function stValidate(){
     var firstInvalid = null;
+    var groupIncomplete = false;
+    function markInvalid(el){
+      el.classList.add('invalid');
+      if(!firstInvalid) firstInvalid = el;
+    }
+    ST_ALL.forEach(function(id){ document.getElementById(id).classList.remove('invalid'); });
     ST_REQUIRED.forEach(function(id){
       var el = document.getElementById(id);
-      if(!el.value.trim()){
-        el.classList.add('invalid');
-        if(!firstInvalid) firstInvalid = el;
-      } else {
-        el.classList.remove('invalid');
+      if(!el.value.trim()) markInvalid(el);
+    });
+    ST_OPTIONAL_GROUPS.forEach(function(group){
+      var anyFilled = group.some(function(id){ return !!stVal(id); });
+      if(anyFilled){
+        group.forEach(function(id){
+          var el = document.getElementById(id);
+          if(!el.value.trim()){ markInvalid(el); groupIncomplete = true; }
+        });
       }
     });
     var err = document.getElementById('stError');
     if(firstInvalid){
-      err.textContent = 'Bitte füllen Sie alle Pflichtfelder (*) aus – fehlende Felder sind rot markiert.';
+      err.textContent = groupIncomplete
+        ? 'Bitte vervollständigen Sie die rot markierten Felder. Hinweis: Wird ein optionales Argument begonnen, müssen Behauptung, Begründung und Beispiel gemeinsam ausgefüllt werden.'
+        : 'Bitte füllen Sie alle Pflichtfelder (*) aus – fehlende Felder sind rot markiert.';
       firstInvalid.focus();
       return false;
     }
@@ -1799,16 +1816,40 @@
     return true;
   }
 
-  function stArgBlock(num, label, b, g, x){
-    var html = '<h2 class="doc-h2"><span class="step-num" style="background:#1f2937;color:#fff;">'+num+'</span> Argument '+num+' '+label+'</h2>';
-    html += '<p><b>Behauptung:</b> '+esc(endDot(b))+'</p>';
-    html += '<p><b>Begründung:</b> '+esc(endDot(g))+'</p>';
-    html += '<p><b>Beispiel / Beleg:</b> '+esc(endDot(x))+'</p>';
-    return html;
+  function stCollectArgs(){
+    var defs = [
+      ['stArg1B','stArg1G','stArg1X'],
+      ['stArg2B','stArg2G','stArg2X'],
+      ['stArg3B','stArg3G','stArg3X']
+    ];
+    var out = [];
+    defs.forEach(function(d){
+      if(stVal(d[0]) && stVal(d[1]) && stVal(d[2])){
+        out.push({ b: stVal(d[0]), g: stVal(d[1]), x: stVal(d[2]) });
+      }
+    });
+    return out;
+  }
+
+  function stArgParagraph(arg, index, total){
+    var opener;
+    if(total === 1){
+      opener = 'Im Kern stützt sich unsere Bewertung auf den folgenden zentralen Gesichtspunkt: ';
+    } else if(index === total - 1){
+      opener = 'Entscheidend ist aus unserer Sicht jedoch vor allem der folgende Punkt: ';
+    } else if(index === 0){
+      opener = 'Zunächst ist aus unserer fachlichen Bewertung ein erster Gesichtspunkt hervorzuheben: ';
+    } else {
+      opener = 'Darüber hinaus kommt ein weiterer gewichtiger Aspekt hinzu: ';
+    }
+    return '<p>' + opener + esc(endDot(arg.b))
+      + ' Ursächlich hierfür ist der folgende Zusammenhang: ' + esc(endDot(arg.g))
+      + ' Ein konkretes Beispiel aus der Praxis belegt dies: ' + esc(endDot(arg.x)) + '</p>';
   }
 
   function renderStellungnahme(){
     var datum = new Date().toLocaleDateString('de-DE');
+    var args = stCollectArgs();
     var html = '';
     html += '<h1 class="doc-title">Stellungnahme: '+esc(stVal('stThema'))+'</h1>';
     html += '<div class="doc-sub">Management Summary &middot; Stand: '+datum+'</div>';
@@ -1821,22 +1862,27 @@
     html += '</div>';
 
     html += '<h2 class="doc-h2">1. Einleitung</h2>';
-    html += '<p>Mit dieser Stellungnahme beziehen wir Position zum Thema <b>'+esc(stVal('stThema'))+'</b>. '
-          + 'Grundlage ist das Dokument &bdquo;'+esc(stVal('stDokument'))+'&ldquo;. '
-          + 'Anlass: '+esc(endDot(stVal('stAnlass')))+'</p>';
-    html += '<p><b>Unsere Position:</b> '+esc(endDot(stVal('stThese')))+'</p>';
+    html += '<p>Mit dieser Stellungnahme nehmen wir Bezug auf das Dokument &bdquo;'+esc(stVal('stDokument'))+'&ldquo; '
+          + 'und beziehen zum Thema <b>'+esc(stVal('stThema'))+'</b> transparent Position. '
+          + 'Anlass für diese Stellungnahme ist der folgende Sachverhalt: '+esc(endDot(stVal('stAnlass')))+' '
+          + 'Vor diesem Hintergrund möchten wir Ihnen unsere fachliche Bewertung darlegen und konkrete Handlungsempfehlungen an die Hand geben.</p>';
+    html += '<p>Unsere zentrale Position lautet: '+esc(endDot(stVal('stThese')))+'</p>';
 
-    html += '<h2 class="doc-h2">2. Hauptteil &ndash; Argumente</h2>';
-    html += stArgBlock(1, '', stVal('stArg1B'), stVal('stArg1G'), stVal('stArg1X'));
-    html += stArgBlock(2, '', stVal('stArg2B'), stVal('stArg2G'), stVal('stArg2X'));
-    html += stArgBlock(3, '(Kernargument)', stVal('stArg3B'), stVal('stArg3G'), stVal('stArg3X'));
+    html += '<h2 class="doc-h2">2. Fachliche Begründung</h2>';
+    html += '<p>' + (args.length > 1
+      ? 'Unsere Position stützt sich auf die nachfolgend dargelegten Argumente, die wir in aufsteigender Bedeutung geordnet haben.'
+      : 'Unsere Position stützt sich auf das nachfolgend dargelegte zentrale Argument.') + '</p>';
+    args.forEach(function(arg, i){ html += stArgParagraph(arg, i, args.length); });
 
     html += '<h2 class="doc-h2">3. Schluss</h2>';
-    html += '<p><b>Zusammenfassung:</b> Zusammenfassend halten wir fest: '
-          + esc(endDot(stVal('stArg1B'))) + ' '
-          + esc(endDot(stVal('stArg2B'))) + ' '
-          + 'Entscheidend ist: ' + esc(endDot(stVal('stArg3B'))) + '</p>';
-    html += '<div class="note-box"><b>Fazit &amp; Empfehlung:</b><br>'+esc(endDot(stVal('stEmpfehlung')))+'</div>';
+    html += '<p>Zusammenfassend lässt sich festhalten, dass die dargelegten Gesichtspunkte ein klares und konsistentes Gesamtbild ergeben '
+          + 'und unsere eingangs formulierte Position in vollem Umfang stützen. '
+          + 'Insbesondere gilt: '+esc(endDot(args[args.length-1].b))+' '
+          + 'Vor diesem Hintergrund bekräftigen wir unsere Einschätzung: '+esc(endDot(stVal('stThese')))+'</p>';
+    html += '<div class="note-box"><b>Fazit &amp; Empfehlung:</b><br>'
+          + 'Auf Basis der vorstehenden Bewertung sprechen wir die folgende Handlungsempfehlung aus: '
+          + esc(endDot(stVal('stEmpfehlung')))
+          + ' Aus unserer Sicht werden damit die richtigen Weichen gestellt, um das Thema nachhaltig und zum Vorteil aller Beteiligten weiterzuentwickeln.</div>';
 
     html += '<p style="margin-top:24px;">Wir stehen für Rückfragen und ein persönliches Gespräch jederzeit gerne zur Verfügung und begleiten die Umsetzung der empfohlenen Maßnahmen aktiv und partnerschaftlich.</p>';
     html += '<div class="sig-block">Mit freundlichen Grüßen<br><br><b>'+esc(stVal('stVerfasser'))+'</b></div>';
@@ -1863,7 +1909,7 @@
   document.getElementById('btnStPdf').addEventListener('click', function(){ window.print(); });
 
   document.getElementById('btnStReset').addEventListener('click', function(){
-    ST_REQUIRED.forEach(function(id){
+    ST_ALL.forEach(function(id){
       var el = document.getElementById(id);
       el.value = '';
       el.classList.remove('invalid');
